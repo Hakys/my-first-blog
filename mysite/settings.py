@@ -25,7 +25,7 @@ SECRET_KEY = '+#+67ob=%sgrr&#_yk&n&8w9y-uiyq1o$^mfuc8rj$)ld1cj28'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*','hakys.pythonanywhere.com']
+ALLOWED_HOSTS = ['*','hakys.pythonanywhere.com','shop.diablaroja.es']
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'blog',
+	'shop',
 ]
 
 MIDDLEWARE = [
@@ -104,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'
 
 TIME_ZONE = 'Europe/Berlin'
 

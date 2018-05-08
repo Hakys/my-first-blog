@@ -2,10 +2,12 @@
 
 {% block content %}
 	{% for post in posts %}
-		<div class="post">
-			<h2><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
-			<p>{{ post.text|linebreaksbr }}</p>
-			<p>publicado: {{ post.published_date }}</p>
-		</div>
+		<div class="post row">
+			<div class="col-md-12">
+				<p class="date col-md-offset-9">Publicado: {{ post.published_date|date:'d-m-Y' }}</p>
+				<h2><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
+				<p>{{ post.text|truncatechars:200 }}</p>
+			</div>				
+		</div>		
 	{% endfor %}
 {% endblock %}

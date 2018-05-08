@@ -12,11 +12,15 @@ Class-based views
 Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+	
+	https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml
+	
 """
 from django.contrib import admin
 from django.conf.urls import include, url
 
 urlpatterns = [
 	url(r'^admin/', admin.site.urls),
-	url(r'', include('blog.urls')),
+	url(r'^blog/', include('blog.urls')),
+	url(r'', include('shop.urls')),
 ]
