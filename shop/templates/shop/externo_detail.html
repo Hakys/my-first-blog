@@ -1,0 +1,13 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+{% block content %}
+    <div class="row product"> 
+        <div class="col-md-12">
+            <h1>{{ externo.name }}</h1></div>    
+            <img class="img-responsive img-homepage" src="{{ externo.url }}" 
+                    alt="{{ externo.name }}" >
+            <a href="{{externo.url}}"></a>
+            <p>{{ externo.created_date }}</p>
+        </div>
+    </div>
+{% endblock %}

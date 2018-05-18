@@ -23,7 +23,7 @@
 	float: right;
 }
 
-.post-form textarea, .post-form input {
+.product-form textarea, .product-form input {
 	width: 100%;
 }
 
@@ -34,11 +34,19 @@
 	margin-right: 20px;
 }
 
-.post {
+.product {
 	margin-bottom: 70px;
 }
 
-.post h1 a, .post h1 a:visited {
+.product .img-responsive {
+    margin: 0 auto;
+}
+
+.img-homepage{
+    height: 75px;
+}
+
+.product h1 a, .product h1 a:visited {
 	color: #000000;
 }
 
@@ -48,4 +56,15 @@ body {
 
 h1, h2, h3, h4 {
 	font-family: 'Lobster', cursive;
+}
+
+h2{
+    font-size: 1.5rem;
+}
+
+hr {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 1px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }

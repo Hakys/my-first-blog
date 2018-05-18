@@ -1,0 +1,10 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+	<h1>Editar Externo</h1>
+	<form method="POST" class="externo-form">
+		{% csrf_token %}
+		{{ form.as_p }}
+		<button type="submit" class="save btn btn-default">Guardar</button>
+	</form>
+{% endblock %}

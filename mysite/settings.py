@@ -121,3 +121,17 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    #  other processors
+    'django.core.context_processors.static',
+    'django.template.context_processors.media',
+)
+
+SOUTH_MIGRATION_MODULES = {
+    'data_importer': 'data_importer.south_migrations',
+}
+
+MIGRATION_MODULES = {
+    'data_importer': 'data_importer.django_migrations'
+},

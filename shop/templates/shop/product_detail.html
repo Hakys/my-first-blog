@@ -1,21 +1,22 @@
-{% extends 'blog/base.html' %}
-
+{% extends 'shop/base.html' %}
+{% load static %}
 {% block content %}
-    <div class="post">        
-		<div class="btn btn-group">				
-			{% if post.published_date %}             
-				<div class="date btn btn-link">
-					Publicado: {{ post.published_date }} </div>        
+    <div class="row product"> 
+        <div class="col-md-12"><h1>{{ product.title }}</h1></div>    
+        <div class="col-md-4">          
+            <img class="img-responsive img-homepage" src="{{ product.src }}" 
+                    alt="{{ product.title }}" >
+        <div class="col-md-6">        
+            <p>{{ product.description|linebreaksbr }}</p>
+        </div>
+        <div class="col-md-6">
+            <p>{{ product.ref }}</p>
+        	{% if product.available %} 
+                OK<span class="btn btn-default glyphicon glyphicon-ok"></span>                   
 			{% else %}
-				<a class="btn btn-default" href="{% url 'post_publish' pk=post.pk %}">
-					Publicar</a>
-			{% endif %} 
-			<a href="{% url 'post_edit' pk=post.pk %}">
-				<span class="btn btn-default glyphicon glyphicon-pencil"></span></a>
-			<a href="{% url 'post_remove' pk=post.pk %}">
-				<span class="btn btn-default glyphicon glyphicon-remove"></span></a>
-		</div> 
-		<h1>{{ post.title }}</h1>       
-        <p>{{ post.text|linebreaksbr }}</p>
+				X<span class="btn btn-default glyphicon glyphicon-remove"></span>  
+			{% endif %}  
+            {{ product.title }}
+        </div>
     </div>
 {% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+{% block content %}
+    <a href="{% url 'externo_dreamlove' %}">Iniciar Fichero</a>
+	{% for ficha in todo %}
+		<div class="row">
+            <!--		               
+			<div class="col-md-3">
+                <img class="img-responsive img-homepage" src="{{ ficha.src }}" 
+                    alt="{{ ficha.title }}" >
+            </div>   
+            -->
+            <div class="col-md-9">
+                <h2><a href="{% url 'externo_detail' pk=ficha.pk %}">{{ ficha.name }}</a></h2>
+                <span class="date">Creado: {{ ficha.created_date|date:"d/m/Y, H:i" }}</span>
+                <span class="date">Actualizado: {{ ficha.updated_date|date:"d/m/Y, H:i" }}</span>
+                <a class="btn btn-default" href="{% url 'externo_importar' pk=ficha.pk %}">Importar</a>
+                <a href="{{ ficha.url }}" target="_blank">              
+                    <span class="glyphicon glyphicon-new-window"></span>{{ ficha.url }}</a>
+            </div> 
+        </div>
+	{% endfor %}
+{% endblock %}
