@@ -5,10 +5,7 @@ from django.utils import timezone
 from .models import Product, Imagen, Externo
 from .forms import ExternoForm
 import xml.etree.ElementTree as ET
-#from django.db.models import Subquery
 from django.db import IntegrityError
-#from django.shortcuts import render_to_response
-
 from django.conf import settings
 from django.core.files import File
 from django.core.files.storage import Storage
@@ -18,7 +15,6 @@ from urllib.error import URLError, HTTPError
 
 def product_list(request):
     todo = Imagen.objects.filter(preferred=True).order_by('-product_id__updated')[:12]
-    #print(todo)
     return render(request, 'shop/product_list.html', {'todo':todo})
 
 def product_detail(request, id):
@@ -26,26 +22,13 @@ def product_detail(request, id):
     return render(request, 'shop/product_detail.html', {'product': product})
 
 def externo_list(request):
-    todo = Externo.objects.all()
-    #print(todo)
+    todo = Externo.objects.all().order_by('-updated_date')
     return render(request, 'shop/externo_list.html', {'todo':todo})
 
 def externo_detail(request, pk):
     externo = get_object_or_404(Externo, pk=pk)
-    return render(request, 'shop/externo_detail.html', {'externo': externo})
-
-def externo_dreamlove(request):
-    name='Dream Love'
-    ext = Externo(name=name)
-    ext.url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml'
-    ext.importar()
-    ext.save()
-    return redirect('externo_list')
-
-def externo_importar(request, pk):
-    externo = get_object_or_404(Externo, pk=pk)
-    externo.importar()
-    return redirect('externo_detail', pk=externo.pk)
+    tamano=externo.file.size/1048576
+    return render(request, 'shop/externo_detail.html', {'externo': externo,'tamano': tamano})
 
 def externo_edit(request, pk):
     externo = get_object_or_404(Externo, pk=pk)
@@ -70,12 +53,68 @@ def externo_edit(request, pk):
         form = ExternoForm(instance=externo)
     return render(request, 'shop/externo_edit.html', {'form': form})
 
+def externo_dreamlove(request):
+    name='DreamLoveFile'
+    ext = Externo(name=name)
+    ext.url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml'
+    ext.importar()
+    ext.save()
+    return redirect('externo_list')  
+
+def externo_importar(request, pk):
+    externo = get_object_or_404(Externo, pk=pk)
+    externo.importar()
+    externo.save()
+    return redirect('externo_detail', pk=externo.pk)
+
+def producto_procesar(request, pk):
+    externo = get_object_or_404(Externo, pk=pk)
+    tree=ET.parse(externo.path())
+    root=tree.getroot() 
+    n=0
+    for pro in root.findall('product'):
+        #ref=pro.find('public_id').text
+        n=n+1
+    print('Numero: '+str(n))
+    return redirect('externo_detail', pk=externo.pk)
+
 def product_test(request):
-    return redirect('product_list') 
-    
+    name='DreamLoveFile'
+    ext = Externo.objects.get(name=name)
+    tree=ET.parse(ext.path())
+    root=tree.getroot() 
+    n=0
+    buscado = 'D-196688'
+    for pro in root.findall('product'):
+        ref=pro.find('public_id').text
+        n=n+1
+        if ref == buscado:
+            print(pro.find('title').text)
+    print('Numero: '+str(n))
+    return redirect('product_list')
+    """
+    url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml'
+    tree=ET.parse(urlopen(url))
+    root=tree.getroot()  
+    n=0
+    buscado = 'D-196688'
+    for pro in root.findall('product'):
+        ref=pro.find('public_id').text
+        n=n+1
+        #if n == 100:
+        #    break
+        if ref == buscado:
+            print(pro.find('title').text)
+    print('Numero: '+str(n))
+    #xml_data=xml_file.read()
+    #xmlDoc = ET.parse( xml_data ) 
+    #print(xmlDoct)
+    return redirect('product_list')
+    """
 def product_reload(request):
-    path = "static/store/prueba.xml"
-    tree = ET.parse(path)
+    #path = "static/store/prueba.xml"
+    url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml'
+    tree=ET.parse(urlopen(url))
     root = tree.getroot()#[5]
     for product in root:
         try:

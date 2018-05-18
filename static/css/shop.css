@@ -15,6 +15,10 @@
 }
 
 .date {
+	color: #828282;
+}
+
+.date_right {
 	float: right;
 	color: #828282;
 }

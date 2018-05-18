@@ -2,12 +2,29 @@
 {% load static %}
 {% block content %}
     <div class="row product"> 
-        <div class="col-md-12">
-            <h1>{{ externo.name }}</h1></div>    
-            <img class="img-responsive img-homepage" src="{{ externo.url }}" 
-                    alt="{{ externo.name }}" >
-            <a href="{{externo.url}}"></a>
-            <p>{{ externo.created_date }}</p>
+        <div class="pb-left-column col-xs-12 col-sm-6 col-md-6">              
+            <img class="img-responsive img-homepage" src="{% static 'img/logo.png' %}" alt="{{ externo.name }}" >
+        </div> 
+        <div class="pb-center-column col-xs-12 col-sm-6 col-md-5">   
+            <h1>{{ externo.name }}</h1> 
+            <p class="date"></p>
+            <p><a href="{{ externo.url }}" target="_blank">              
+                <span class="glyphicon glyphicon-new-window"></span> URL Dream Love</a>
+                Creado: {{ externo.created_date|date:"d/m/Y, H:i" }}
+                <a class="btn btn-link" href="{% url 'externo_importar' pk=externo.pk %}">Importar</a>
+            </p>
+            <p><a href="{% static 'store/' %}{{externo.file.url}}" target="_blank">              
+                <span class="glyphicon glyphicon-new-window"></span> URL Diabla Roja</a>
+                Actualizado: {{ externo.updated_date|date:"d/m/Y, H:i " }}
+                <a class="btn btn-link" href="{% url 'producto_procesar' pk=externo.pk %}">Procesar</a>
+            </p>
+            <p>
+                Tamaño: {{tamano|floatformat:2}} Mb.<br> 
+                Size: {{externo.file.size}} byte          
+            </p>
+            Path [{{externo.file.path}}]
+            
+            Name [{{externo.file.name}}]
         </div>
     </div>
 {% endblock %}

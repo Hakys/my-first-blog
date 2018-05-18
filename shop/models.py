@@ -7,7 +7,8 @@ from django.core.files import File
 from django.core.files.storage import Storage
 from django.core.files.storage import FileSystemStorage
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError  
+from urllib.error import URLError, HTTPError 
+from django.conf import settings
 
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
@@ -72,7 +73,7 @@ class Product(models.Model):
     def __str__(self):
         return self.ref+self.updated.strtime
 
-#fs_media = FileSystemStorage(location='/img')        
+#fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')        
         
 class Imagen(models.Model):
     id = models.AutoField(primary_key=True)
@@ -87,36 +88,35 @@ class Imagen(models.Model):
     
     def __str__(self):
         return self.ref          
-        
+
+fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
+
 class Externo(models.Model): 
     name = models.CharField(max_length=200)
     url = models.URLField()
-    file = models.FileField(null=True, blank=True)
-    created_date = models.DateTimeField(default=timezone.now)  
+    file = models.FileField(storage=fs,null=True, blank=True)
+    created_date = models.DateTimeField('Fecha de Creación',default=timezone.now)  
     updated_date = models.DateTimeField('Última Actualización',default=timezone.now)
 
     def importar(self):
-        request = Request(self.url)
         try:
-            response = urlopen(request)
+            response = urlopen(self.url)
         except HTTPError as e:
             print('The server couldn\'t fulfill the request.')
-            print('Error code: ', e.code)
+            print('Error code: '+e.code)
         except URLError as e:
             print('We failed to reach a server.')
-            print('Reason: ', e.reason)
-        else:
-            the_file = response.read()
-            self.file.save(self.name+str(self.updated_date), the_file, True)  
-            self.created_date=timezone.now()
-            self.save()        
-        return redirect('externo_detail', pk=externo.pk)
+            print('Reason: '+e.reason)
+        else:        
+            self.file.save(self.name+'.xml', response)    
+            self.updated_date=timezone.now()
+            self.save()   
+
+    def path(self):
+        #url='//static/store/'+self.file.url
+        url=self.file.path
+        print(url)
+        return url
 
     def __str__(self):
-        return self.name+str(self.updated_date)
-        
-    #Storage._open() _save() delete()
-    #Storage.exists()
-    #Storage.listdir()
-    #Storage.size()
-    #Storage.url()
+        return self.name+'.xml ('+str(self.updated_date)+')'
