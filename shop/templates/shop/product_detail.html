@@ -2,21 +2,51 @@
 {% load static %}
 {% block content %}
     <div class="row product"> 
-        <div class="col-md-12"><h1>{{ product.title }}</h1></div>    
-        <div class="col-md-4">          
-            <img class="img-responsive img-homepage" src="{{ product.src }}" 
-                    alt="{{ product.title }}" >
-        <div class="col-md-6">        
-            <p>{{ product.description|linebreaksbr }}</p>
+        <div class="pb-left-column col-xs-12 col-sm-6 col-md-6">
+            <ul class="nav nav-tabs">
+                {% for image in images %}                    
+                    <li {% if image.preferred %}class="active"{% endif %}>
+                        <a data-toggle="tab" href="#{{ image.pk }}">
+                            <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
+                                title="{{ image.title }}" width="50">
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>                
+            <div class="tab-content">
+                {% for image in images %}
+                    <div id="{{ image.pk }}" class="tab-pane fade {% if image.preferred %}in active{% endif %}">
+                        <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
+                            title="{{ image.title }}" width="100%">
+                    </div>
+                {% endfor %}
+            </div>
+        </div>   
+        <div class="pb-center-column col-xs-12 col-sm-6 col-md-5">
+            <h2>{{ product.title }}</h2> 
+            <h5>({{ product.description }})</h5>
+            <div class="content_date">
+                <span class="date">Creado: {{ product.created_date|date:"d/m/Y, H:i" }}</span>
+                <span class="date">Actualizado: {{ product.updated|date:"d/m/Y, H:i" }}</span>
+                <span class="date">Lanzamiento: {{ product.release_date|date:"d/m/Y, H:i" }}</span>
+            </div>
+            <span><a href="{{ product.product_url }}" target="_blank">{{ product.ref }}</a></span> 
+            <span>{% if product.available %} No {% endif %} Disponible</span>            
+            <div class="content_price"> 
+                <span class="old-price product-price">Coste: {{ product.cost_price }} € </span> 
+                <span class="old-price product-price">IVA: {{ product.vat }} € </span> 
+                <span class="price product-price">Precio {{ product.unit_of_measurement}}: {{ product.price }} € </span>
+                <span class="price product-price">Recomendado: {{ product.recommended_retail_price }} € </span>
+                <span class="price product-price">Envio {{ product.delivery_desc}}: {{ product.default_shipping_cost }} € </span>
+            </div>
+
         </div>
-        <div class="col-md-6">
-            <p>{{ product.ref }}</p>
-        	{% if product.available %} 
-                OK<span class="btn btn-default glyphicon glyphicon-ok"></span>                   
-			{% else %}
-				X<span class="btn btn-default glyphicon glyphicon-remove"></span>  
-			{% endif %}  
-            {{ product.title }}
+        <div class="row ident">
+            <div class="pb-center-column col-xs-12">
+                <div class="rte text-justify">
+                    <p>{{ product.html_description|safe }}</p>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}

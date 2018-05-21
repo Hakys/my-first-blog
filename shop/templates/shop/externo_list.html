@@ -10,7 +10,8 @@
                     <h2><a href="{% url 'externo_detail' pk=ficha.pk %}">{{ ficha.name }}</a></h2>
                     <p class="date">Actualizado: {{ ficha.updated_date|date:"d/m/Y, H:i " }}
                         <a class="btn btn-link" href="{% url 'externo_importar' pk=ficha.pk %}">Importar </a>
-                        <a class="btn btn-link" href="{% url 'producto_procesar' pk=externo.pk %}">Procesar</a></p>
+                        <a class="btn btn-link" href="{% url 'externo_procesar' pk=ficha.pk %}">Procesar</a>
+                    </p>
                 </div> 
             </div>
         {% endfor %}

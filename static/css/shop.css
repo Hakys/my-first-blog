@@ -39,10 +39,10 @@
 }
 
 .product {
-	margin-bottom: 70px;
+	-margin-bottom: 70px;
 }
 
-.product .img-responsive {
+.img-responsive {
     margin: 0 auto;
 }
 
@@ -58,17 +58,15 @@ body {
 	padding-left: 15px;
 }
 
-h1, h2, h3, h4 {
+.page-header h1 {
 	font-family: 'Lobster', cursive;
+	font-size:20vw
 }
 
-h2{
-    font-size: 1.5rem;
+h1, h2, h3, h4 {
+	font-family: 'Work Sans', sans-serif;
 }
 
-hr {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  border: 1px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+.nav>li>a {
+    padding: 0 0;
 }

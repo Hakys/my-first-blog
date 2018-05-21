@@ -7,24 +7,27 @@
         </div> 
         <div class="pb-center-column col-xs-12 col-sm-6 col-md-5">   
             <h1>{{ externo.name }}</h1> 
-            <p class="date"></p>
-            <p><a href="{{ externo.url }}" target="_blank">              
+            <p>
+                <a href="{{ externo.url }}" target="_blank">              
                 <span class="glyphicon glyphicon-new-window"></span> URL Dream Love</a>
                 Creado: {{ externo.created_date|date:"d/m/Y, H:i" }}
-                <a class="btn btn-link" href="{% url 'externo_importar' pk=externo.pk %}">Importar</a>
+               
             </p>
-            <p><a href="{% static 'store/' %}{{externo.file.url}}" target="_blank">              
-                <span class="glyphicon glyphicon-new-window"></span> URL Diabla Roja</a>
+            <p>
+                <a href="{% static 'store/' %}{{externo.file.url}}" target="_blank">              
+                <span class="glyphicon glyphicon-new-window"></span>{{externo.file.name}}</a>
                 Actualizado: {{ externo.updated_date|date:"d/m/Y, H:i " }}
-                <a class="btn btn-link" href="{% url 'producto_procesar' pk=externo.pk %}">Procesar</a>
             </p>
             <p>
                 Tamaño: {{tamano|floatformat:2}} Mb.<br> 
-                Size: {{externo.file.size}} byte          
+                Número Productos: {{externo.n_productos}}<br>
+                Número Imagenes: {{externo.n_imagenes}}      
             </p>
-            Path [{{externo.file.path}}]
-            
-            Name [{{externo.file.name}}]
+            <div>
+                <a class="btn btn-default" href="{% url 'externo_importar' pk=externo.pk %}">Importar</a>
+                <a class="btn btn-default" href="{% url 'externo_procesar' pk=externo.pk %}">Procesar</a>
+            </div>
+            <!--Size: {{externo.file.size}} byte Path [{{externo.file.path}}] -->
         </div>
     </div>
 {% endblock %}

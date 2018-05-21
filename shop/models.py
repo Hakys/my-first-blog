@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from datetime import datetime
 import pytz
-import datetime
 from django.conf import settings
 from django.core.files import File
 from django.core.files.storage import Storage
@@ -14,19 +14,20 @@ class Product(models.Model):
     id = models.AutoField(primary_key=True)
     ref = models.CharField(max_length=20,unique=True)
     updated = models.DateTimeField('Última Actualización',default=timezone.now)
+    created_date = models.DateTimeField(default=timezone.now)
     available = models.BooleanField('Disponible',default=True)
     title = models.CharField(max_length=200) 
     cost_price = models.DecimalField(max_digits=8,decimal_places=2)
     price = models.DecimalField(max_digits=8,decimal_places=2)
     product_url = models.URLField(blank=True)
     recommended_retail_price = models.DecimalField(max_digits=8,decimal_places=2,default=0)
-    #default_shipping_cost = models.DecimalField(decimal_places=2,max_digits=8,default=0)
-    #delivery_desc = models.CharField(max_length=20,blank=True)
-    #vat = models.DecimalField('IVA',decimal_places=2,max_digits=4,default=21.00)
-    #unit_of_measurement = models.CharField(max_length=20,blank=True)
-    #description = models.TextField(blank=True)
-    #html_description = models.TextField(blank=True)		
-    #release_date = models.DateTimeField('Lanzamiento',blank=True, null=True)
+    default_shipping_cost = models.DecimalField(decimal_places=2,max_digits=8,default=0)
+    delivery_desc = models.CharField(max_length=20,blank=True)
+    vat = models.DecimalField('IVA',decimal_places=2,max_digits=4,default=21.00)
+    unit_of_measurement = models.CharField(max_length=20,blank=True)
+    description = models.TextField(blank=True, null=True)
+    html_description = models.TextField(blank=True, null=True)		
+    release_date = models.DateTimeField('Lanzamiento',blank=True, null=True)
     #prepaid_reservation = models.BooleanField('Pre-Pedido',default=False)
     #destocking = models.BooleanField('Liquidación',default=False)
     #shipping_weight_grame = models.IntegerField(default=0)
@@ -63,7 +64,6 @@ class Product(models.Model):
 	#	<stock>
 	#		<location path="General">50</location>
 	#	</stock>
-	#created_date = models.DateTimeField(default=timezone.now)
 	#published_date = models.DateTimeField(blank=True, null=True)
 
     def publish(self):
@@ -71,7 +71,7 @@ class Product(models.Model):
         self.save()
 
     def __str__(self):
-        return self.ref+self.updated.strtime
+        return self.ref+' ('+str(self.updated)+')'
 
 #fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')        
         
@@ -96,7 +96,9 @@ class Externo(models.Model):
     url = models.URLField()
     file = models.FileField(storage=fs,null=True, blank=True)
     created_date = models.DateTimeField('Fecha de Creación',default=timezone.now)  
-    updated_date = models.DateTimeField('Última Actualización',default=timezone.now)
+    updated_date = models.DateTimeField('Última Actualización',default=datetime.min)
+    n_productos = models.IntegerField(default=0)
+    n_imagenes = models.IntegerField(default=0)
 
     def importar(self):
         try:
@@ -110,13 +112,24 @@ class Externo(models.Model):
         else:        
             self.file.save(self.name+'.xml', response)    
             self.updated_date=timezone.now()
+            self.n_productos=0
+            self.n_imagenes=0
             self.save()   
 
     def path(self):
-        #url='//static/store/'+self.file.url
-        url=self.file.path
-        print(url)
-        return url
+        return self.file.path
 
     def __str__(self):
-        return self.name+'.xml ('+str(self.updated_date)+')'
+        return self.name+'.xml (P:'+str(self.n_productos)+')(I:'+str(self.n_imagenes)+') ('+str(self.updated_date)+')'
+
+class Configuracion(models.Model):
+    variable = models.CharField(max_length=200,null=False)
+    valor = models.TextField(blank=True, null=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        if self.activo: 
+            activo='Si' 
+        else: 
+            activo='No'
+        return self.variable+': '+self.valor+'('+activo+')'
