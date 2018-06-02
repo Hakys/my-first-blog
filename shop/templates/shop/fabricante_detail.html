@@ -1,0 +1,75 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+{% block content %}
+    {% include 'shop/nav_marcas.html' %}
+    <h3>{% if ficha.image.url %}
+        <img  src="{{ ficha.image.url }}" width="50">
+    {% else %}
+        <img src="{% static 'img/no-foto.jpg' %}" alt="Sin Foto" width="50">
+    {% endif %}
+        {{ficha.name}}
+    </h3>
+    <hr>
+    {% if sub_fabricantes %}
+        <ol>{% for fab in sub_fabricantes %}
+            <li><a href="{{ fab.slug }}"> {{ fab.name }} </a></li>
+        {% endfor %}</ol>
+    {% endif %}
+    <hr>
+    {% if fichas_prod %}
+        <div class="row small-up-1 medium-up-3" >
+            {% for i in fichas_prod %}
+                <div class="columns">
+                    <div class=" card-article-hover card">
+                        <a href="/fabricante/{{ i.slug }}">
+                            <img  src="{{ i.image.url }}">
+                        </a>
+                        <div class="card-section">
+                            <a href="/fabricante/{{ i.slug }}">
+                                <h6 class="article-title">{{ i.title | truncatechars:30}}</h6>
+                            </a>
+                        </div>
+                        <div class="card-divider flex-container align-middle">
+                            <a href="" class="author">{{ i.user.get_full_name }}</a>
+                        </div>
+                        <div class="hover-border"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="product row">
+            <div class="center_column col-xs-12" >
+                <div class="d-inline-flex p-2 flex-wrap align-items-end align-content-between align-self-sm-stretch">
+                    {% for ficha in fichas_prod %}
+                        <div class="w-25 float-left d-inline-block">
+                            <div class="product-container" itemscope="" itemtype="https://schema.org/Product">
+                                <div class="left-block">
+                                    <div class="product-image-container"> 
+                                        <a class="product_img_link" href="{% url 'product_detail' pk=ficha.product_id.pk %}" 
+                                            title="{{ ficha.title | truncatechars:30 }}" itemprop="url"> 
+                                            <img class="replace-2x img-responsive" src="{{ ficha.src }}" alt="{{ ficha.title }}" 
+                                                title="{{ ficha.title }}" width="270" height="345" itemprop="image"> 
+                                        </a>                                    
+                                    </div>
+                                </div>
+                                <div class="right-block">
+                                    <h5 itemprop="name"> 
+                                        <a class="product-name" href="{% url 'product_detail' pk=ficha.product_id.pk %}" 
+                                            title="{{ ficha.title }}" itemprop="url"> 
+                                            {{ ficha.title }} 
+                                        </a>
+                                    </h5>
+                                    <span class="manufacturer"> 
+                                        <a href="https://diablaroja.es/marcas/fleshlight-99"> 
+                                            <strong>FLESHLIGHT</strong> 
+                                        </a> 
+                                    </span>                     
+                                </div>
+                            </div>                          
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

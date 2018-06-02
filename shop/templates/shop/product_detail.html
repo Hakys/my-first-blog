@@ -1,12 +1,22 @@
 {% extends 'shop/base.html' %}
 {% load static %}
 {% block content %}
+    <style>
+        .list-group-item {
+            padding: .25rem 1rem;
+            border: 0px solid rgba(0,0,0,.125);
+        }
+        h2 {
+            font-size: 1.5rem;
+        }
+    </style>
+    {% include 'shop/nav_marcas.html' %}
     <div class="row product"> 
         <div class="pb-left-column col-xs-12 col-sm-6 col-md-6">
-            <ul class="nav nav-tabs">
+            <ul class="nav nav-tabs" role="tablist">
                 {% for image in images %}                    
-                    <li {% if image.preferred %}class="active"{% endif %}>
-                        <a data-toggle="tab" href="#{{ image.pk }}">
+                    <li class="nav-item">
+                        <a data-toggle="tab" href="#{{ image.pk }}" class="nav-link{% if image.preferred %} active{% endif %}">
                             <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
                                 title="{{ image.title }}" width="50">
                         </a>
@@ -15,7 +25,7 @@
             </ul>                
             <div class="tab-content">
                 {% for image in images %}
-                    <div id="{{ image.pk }}" class="tab-pane fade {% if image.preferred %}in active{% endif %}">
+                    <div id="{{ image.pk }}" class="container tab-pane {% if image.preferred %}active{% else %}fade{% endif %}">
                         <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
                             title="{{ image.title }}" width="100%">
                     </div>
@@ -26,20 +36,35 @@
             <h2>{{ product.title }}</h2> 
             <h5>({{ product.description }})</h5>
             <div class="content_date">
-                <span class="date">Creado: {{ product.created_date|date:"d/m/Y, H:i" }}</span>
-                <span class="date">Actualizado: {{ product.updated|date:"d/m/Y, H:i" }}</span>
-                <span class="date">Lanzamiento: {{ product.release_date|date:"d/m/Y, H:i" }}</span>
+                <ul class="list-group list-group-flush">
+                <li class="list-group-item">Creado: {{ product.created_date|date:"d/m/Y, H:i" }}</li>
+                <li class="list-group-item">Actualizado: {{ product.updated|date:"d/m/Y, H:i" }}</li>
+                <li class="list-group-item">Lanzamiento: {{ product.release_date|date:"d/m/Y, H:i" }}</li>
+                </ul>
             </div>
             <span><a href="{{ product.product_url }}" target="_blank">{{ product.ref }}</a></span> 
             <span>{% if product.available %} No {% endif %} Disponible</span>            
             <div class="content_price"> 
-                <span class="old-price product-price">Coste: {{ product.cost_price }} € </span> 
-                <span class="old-price product-price">IVA: {{ product.vat }} € </span> 
-                <span class="price product-price">Precio {{ product.unit_of_measurement}}: {{ product.price }} € </span>
-                <span class="price product-price">Recomendado: {{ product.recommended_retail_price }} € </span>
-                <span class="price product-price">Envio {{ product.delivery_desc}}: {{ product.default_shipping_cost }} € </span>
+                <ul class="list-group list-group-flush">
+                <li class="list-group-item">Coste: {{ product.cost_price }} € </li> 
+                <li class="list-group-item">IVA: {{ product.vat }} % </li> 
+                <li class="list-group-item">Precio {{ product.unit_of_measurement}}: {{ product.price }} € </li>
+                <li class="list-group-item">Recomendado: {{ product.recommended_retail_price }} € </li>
+                <li class="list-group-item">Coste Envío {{ product.delivery_desc}}: {{ product.default_shipping_cost }} € </li>
+                </ul>
             </div>
-
+            <span class="manufacturer"> 
+                <a href="/fabricante/{{ product.fabricante.slug }}/"> 
+                    <img class="card-img-fab" height="40px"
+                        {% if ficha.image.url %}
+                            src="{{ product.fabricante.image.url }}" 
+                        {% else %}
+                            src="{% static 'img/no-foto.jpg' %}"
+                        {% endif %}
+                        alt="{{ product.fabricante.title }}" title="{{ product.fabricante.title }}">
+                    <strong>{{ product.fabricante.name }}</strong> 
+                </a> 
+            </span>  
         </div>
         <div class="row ident">
             <div class="pb-center-column col-xs-12">

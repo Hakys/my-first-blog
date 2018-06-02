@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 from datetime import datetime
 import pytz
 from django.conf import settings
@@ -10,8 +11,83 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError 
 from django.conf import settings
 
-class Product(models.Model):
-    id = models.AutoField(primary_key=True)
+fs_img = FileSystemStorage(location=settings.MEDIA_ROOT)
+
+class Imagen_gen(models.Model):
+    title = models.CharField(max_length=200,null=True)
+    img = models.ImageField(storage=fs_img,null=True)
+    url = models.URLField(unique=True,null=True,blank=True)
+    preferred = models.BooleanField('Portada',default=False)
+    
+    def get_url():
+        if self.url:
+            return self.url
+        else:
+            return self.img.url
+    
+    def __str__(self):
+        if self.preferred: 
+            preferred='Sí' 
+        else: 
+            preferred='No'
+        return self.title+' ('+preferred+')'
+        
+'''
+class Categoria(models.Model):
+    name = models.CharField(max_length=200)    
+    #image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE,blank=True,null=True)
+    gesioid = models.IntegerField(unique=True,null=True)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+    slug = models.SlugField(blank=True, null=True)
+    parent = models.ForeignKey('self', null=True ,related_name='children', on_delete=None)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('slug', 'parent',)
+        verbose_name_plural = "categorias"       #categories under a parent with same slug 
+
+    def __str__(self): 
+        if self.activo: 
+            activo='Si' 
+        else: 
+            activo='No'                          # __str__ method elaborated later in
+        full_path = [str(self.gesioid)+' '+self.name+' ('+activo+')']                  # post.  use __unicode__ in place of
+                                                 # __str__ if you are using python 2
+        k = self.parent                          
+        while k is not None:
+            full_path.append(k.name)
+            k = k.parent
+        return ' -> '.join(full_path[::-1])
+'''
+
+#<brand><![CDATA[REALROCK 100% FLESH]]></brand>
+#<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
+class Fabricante(models.Model):
+    name = models.CharField(max_length=50) 
+    slug = models.SlugField(blank=True, null=True)
+    activo = models.BooleanField(default=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, default=models.SET_NULL, null=True ,related_name='children')
+    image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
+
+    def __str__(self):  
+        if self.activo: 
+            activo='Si' 
+        else: 
+            activo='No'                          
+        full_path = [self.name+' ('+activo+')']                  
+        k = self.parent                          
+        while k is not None:
+            full_path.append(k.name)
+            k = k.parent
+        return ' -> '.join(full_path[::-1])    
+    
+    class Meta:
+        ordering = ('name',)
+        verbose_name = 'fabricantes'
+        verbose_name_plural = 'marcas'
+
+class Product(models.Model): 
+    slug = models.SlugField(max_length=20,unique=True,blank=True)
+    portada = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
     ref = models.CharField(max_length=20,unique=True)
     updated = models.DateTimeField('Última Actualización',default=timezone.now)
     created_date = models.DateTimeField(default=timezone.now)
@@ -28,6 +104,9 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     html_description = models.TextField(blank=True, null=True)		
     release_date = models.DateTimeField('Lanzamiento',blank=True, null=True)
+    fabricante = models.ForeignKey(Fabricante,on_delete=models.SET_NULL,null=True)
+    #category = models.ForeignKey('Categoria', null=True, blank=True, on_delete=None)
+    #categorias = models.ManyToManyField(Categoria)
     #prepaid_reservation = models.BooleanField('Pre-Pedido',default=False)
     #destocking = models.BooleanField('Liquidación',default=False)
     #shipping_weight_grame = models.IntegerField(default=0)
@@ -43,7 +122,7 @@ class Product(models.Model):
 	#	<barcodes>
 	#		<barcode type="EAN-13"><![CDATA[697309010016]]></barcode>
 	#	</barcodes>
-	#	<categories>
+    #	<categories>
 	#		<category gesioid="87" ref="Aceites Esenciales"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Aceites esenciales]]></category>
 	#		<category gesioid="94" ref="Efecto Afrodisiaco"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Efecto afrodisiaco]]></category>
 	#		<category gesioid="91" ref="Clima Erotico"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Clima erótico]]></category>
@@ -66,28 +145,45 @@ class Product(models.Model):
 	#	</stock>
 	#published_date = models.DateTimeField(blank=True, null=True)
 
-    def publish(self):
-        #self.published_date = timezone.now()
-        self.save()
-
     def __str__(self):
         return self.ref+' ('+str(self.updated)+')'
+    
+    class Meta:
+        ordering = ('-release_date',)
+    def publish(self):
+        #self.published_date = timezone.now()
+        self.available = True
+        self.save()
+    
+    def get_fab_list(self):
+        k = self.fabricante
+        breadcrumb = ["dummy"]
+        while k is not None:
+            breadcrumb.append(k.slug)
+            k = k.parent
+
+        for i in range(len(breadcrumb)-1):
+            breadcrumb[i] = '/'.join(breadcrumb[-1:i-1:-1])
+        return breadcrumb[-1:0:-1]
 
 #fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')        
         
 class Imagen(models.Model):
-    id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200,blank=True,null=True)
     name = models.CharField(max_length=200,blank=True,null=True)
-    ref = models.CharField(max_length=20)
+    ref = models.CharField(max_length=20,blank=True)
     product_id = models.ForeignKey(Product,on_delete=models.CASCADE,null=False)
     #img = models.ImageField(storage=fs)
-    src = models.URLField(unique=True,blank=True)
+    src = models.URLField(unique=True)
     url = models.URLField(blank=True)
-    preferred = models.BooleanField('Portada')
+    preferred = models.BooleanField('Portada',default=False)
     
     def __str__(self):
-        return self.ref          
+        if self.preferred: 
+            preferred='Sí' 
+        else: 
+            preferred='No'
+        return self.ref+' '+self.title+' ('+preferred+')'          
 
 fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
 
@@ -98,7 +194,9 @@ class Externo(models.Model):
     created_date = models.DateTimeField('Fecha de Creación',default=timezone.now)  
     updated_date = models.DateTimeField('Última Actualización',default=datetime.min)
     n_productos = models.IntegerField(default=0)
+    n_fabricantes = models.IntegerField(default=0)
     n_imagenes = models.IntegerField(default=0)
+    n_categorias = models.IntegerField(default=0)
 
     def importar(self):
         try:
@@ -113,7 +211,9 @@ class Externo(models.Model):
             self.file.save(self.name+'.xml', response)    
             self.updated_date=timezone.now()
             self.n_productos=0
+            self.n_fabricantes=0
             self.n_imagenes=0
+            self.n_categorias=0
             self.save()   
 
     def path(self):

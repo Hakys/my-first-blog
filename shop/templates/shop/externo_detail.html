@@ -2,31 +2,34 @@
 {% load static %}
 {% block content %}
     <div class="row product"> 
-        <div class="pb-left-column col-xs-12 col-sm-6 col-md-6">              
+        <div class="pb-left-column col-xs-12 col-sm-4 col-md-4">              
             <img class="img-responsive img-homepage" src="{% static 'img/logo.png' %}" alt="{{ externo.name }}" >
         </div> 
-        <div class="pb-center-column col-xs-12 col-sm-6 col-md-5">   
+        <div class="pb-center-column col-xs-12">   
             <h1>{{ externo.name }}</h1> 
             <p>
                 <a href="{{ externo.url }}" target="_blank">              
-                <span class="glyphicon glyphicon-new-window"></span> URL Dream Love</a>
+                <span class="glyphicon glyphicon-new-window"></span> URL Dream Love</a><br>
                 Creado: {{ externo.created_date|date:"d/m/Y, H:i" }}
-               
             </p>
             <p>
                 <a href="{% static 'store/' %}{{externo.file.url}}" target="_blank">              
-                <span class="glyphicon glyphicon-new-window"></span>{{externo.file.name}}</a>
+                <span class="glyphicon glyphicon-new-window"></span>{{externo.file.name}}</a><br>
                 Actualizado: {{ externo.updated_date|date:"d/m/Y, H:i " }}
             </p>
             <p>
-                Tamaño: {{tamano|floatformat:2}} Mb.<br> 
-                Número Productos: {{externo.n_productos}}<br>
-                Número Imagenes: {{externo.n_imagenes}}      
+                Tamaño: {{context.tamano|floatformat:2}} Mb.<br> 
+                Nº Productos: {{externo.n_productos}}<br>
+                Nº Fabricantes: {{externo.n_fabricantes}}<br>
+                Nº Imagenes: {{externo.n_imagenes}}<br> 
+                Nº Categorias: {{externo.n_categorias}} 
             </p>
-            <div>
-                <a class="btn btn-default" href="{% url 'externo_importar' pk=externo.pk %}">Importar</a>
-                <a class="btn btn-default" href="{% url 'externo_procesar' pk=externo.pk %}">Procesar</a>
-            </div>
+            <div><ol>
+                <li><a class="btn btn-default" href="{% url 'externo_importar' pk=externo.pk %}">Importar Fichero</a></li> 
+                <li><a class="btn btn-default" href="{% url 'externo_procesar_productos' pk=externo.pk %}">Procesar Productos</a></li> 
+                <li><a class="btn btn-default" href="{% url 'externo_procesar_fabricantes' pk=externo.pk %}">Procesar Fabricantes</a></li> 
+                <li><a class="btn btn-default" href="{% url 'externo_procesar_imagenes' pk=externo.pk %}">Procesar Imagenes</a></li>              
+            </ol></div>
             <!--Size: {{externo.file.size}} byte Path [{{externo.file.path}}] -->
         </div>
     </div>

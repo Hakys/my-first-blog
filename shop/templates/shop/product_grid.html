@@ -1,60 +1,57 @@
 {% extends 'shop/base.html' %}
 {% load static %}
 {% block content %}
+    <style>
+    .card-body {
+        padding: 0.25rem;
+    }
+    .card-title{
+        font-size:1rem;
+    }
+    .card-text{
+        font-size:0.75rem;
+        line-height: 1.25;
+    }
+    .card-img-top{
+        padding: 0.20rem 0.5rem;
+    }
+    .card-img-fab{
+        min-height: 30px;
+    }
+    </style>
     <div class="product row">
-        <div class="center_column col-xs-12 col-sm-12">
-            <ul class="grid row">
-                {% for ficha in todo %}
-                    <li class="col-xs-12 col-sm-4 col-md-3 first-in-line first-item-of-tablet-line first-item-of-mobile-line">
-                        <div class="product-container" itemscope="" itemtype="https://schema.org/Product">
-                            <div class="left-block">
-                                <div class="product-image-container"> 
-                                    <a class="product_img_link" href="{% url 'product_detail' pk=ficha.product_id.pk %}" 
-                                        title="{{ ficha.title }}" itemprop="url"> 
-                                        <img class="replace-2x img-responsive" src="{{ ficha.src }}" alt="{{ ficha.title }}" 
-                                            title="{{ ficha.title }}" width="270" height="345" itemprop="image"> 
+        <div class="center_column col-xs-12" >
+            <div class="row">
+                {% for ficha in fichas %}
+                    <div class="col-lg-3 col-md-4 mb-3">
+                        <div class="card">
+                            <a href="{% url 'product_detail' pk=ficha.product_id.pk %}">
+                                <img class="card-img-top"  src="{{ ficha.src }}" alt="{{ ficha.title }}" title="{{ ficha.title }}"></a>
+                            <div class="card-body">
+                                <h4 class="card-title">
+                                    <a href="{% url 'product_detail' pk=ficha.product_id.pk %}">{{ ficha.title | truncatechars:40 }}</a>
+                                </h4>
+                                <h5 class="text-right">{{ ficha.product_id.price }} €</h5>
+                                <p class="manufacturer text-center"> 
+                                    <a href="/fabricante/{{ ficha.product_id.fabricante.slug }}/">
+                                        <img class="card-img-fab" height="30px"
+                                            {% if ficha.image.url %}
+                                                src="{{ ficha.product_id.fabricante.image.url }}" 
+                                            {% else %}
+                                                src="{% static 'img/no-foto.jpg' %}"
+                                            {% endif %}
+                                            alt="{{ ficha.product_id.fabricante.name }}" title="{{ ficha.product_id.fabricante.name }}>"
+                                        <strong>{{ ficha.product_id.fabricante.name }}</strong> 
                                     </a> 
-                                    <!--<a class="add_to_wishlist addToWishlist wishlistProd_1151" href="#" rel="1151" 
-                                        title="Unñadir a la lista de deseos" onclick="WishlistCart('wishlist_block_list', 'add', '1151', false, 1); return false;">
-                                    </a>-->
-                                    <span class="functional_wrapper"> 
-                                        <a class="ajax_add_to_cart_button no_eng" href="https://diablaroja.es/carro-de-la-compra?add=1&amp;id_product=1151&amp;token=9de9a2bbe9b3cbd5465c15639927369b" 
-                                            rel="nofollow" title="Añadir al carrito" data-id-product-attribute="0" data-id-product="1151" data-minimal_quantity="1">
-                                            Añadir al carrito
-                                        </a> 
-                                        <!--<a class="quick-view" href="https://diablaroja.es/vaginas-y-anos/d-212581-fleshlight-go-surge-value-pack-1151.html" 
-                                            rel="https://diablaroja.es/vaginas-y-anos/d-212581-fleshlight-go-surge-value-pack-1151.html">
-                                        </a>-->
-                                    </span>
-                                </div>
+                                </p>  
                             </div>
-                            <div class="right-block">
-                                <h5 itemprop="name"> 
-                                    <a class="product-name" href="{% url 'product_detail' pk=ficha.product_id.pk %}" 
-                                        title="{{ ficha.title }}" itemprop="url"> 
-                                        {{ ficha.title }} 
-                                    </a>
-                                </h5>
-                                <span class="manufacturer"> 
-                                    <a href="https://diablaroja.es/marcas/fleshlight-99"> 
-                                        <strong>FLESHLIGHT</strong> 
-                                    </a> 
-                                </span>
-                                <p class="product-desc" itemprop="description"></p>
-                                <div class="content_price"> 
-                                    <span class="old-price product-price"> 73,5 € </span> 
-                                    <span class="price-percent-reduction"> -10% </span> 
-                                    <span class="price product-price"> 66,2 € </span>
-                                </div>
-                                <div class="content_price">
-                                    <span class="date">Actualizado: {{ ficha.product_id.updated|date:"d/m/Y, H:i" }}</span><br>
-                                    <span><a href="{{ ficha.product_id.product_url }}" target="_blank">{{ ficha.ref }}</a></span> 
-                                </div>                                
-                            </div>
-                        </div>                          
-                    </li>
+                            <!--<div class="card-footer">
+                                <small class="text-muted">&#9733; &#9733; &#9733; &#9733; &#9734;</small>
+                            </div>-->
+                        </div>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
     </div>
 {% endblock %}
