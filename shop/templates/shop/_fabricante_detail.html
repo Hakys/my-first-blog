@@ -1,0 +1,183 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+{% block content %}
+    {% include 'shop/nav_marcas.html' %}
+    {% if ficha %}
+        <h3>{% if ficha.image.url %}
+            <img  src="{{ ficha.image.url }}" width="50">
+        {% else %}
+            <img src="{% static 'img/no-foto.jpg' %}" alt="Sin Foto" width="50">
+        {% endif %}
+            {{ficha.name}}
+        </h3>
+        <hr>
+    {% endif %}
+    {% if sub_fabricantes %}
+        <ol>{% for fab in sub_fabricantes %}
+            <li><a href="{{ fab.slug }}"> {{ fab.name }} </a></li>
+        {% endfor %}</ol>
+        <hr>
+    {% endif %}
+    {% if not fichas_prod %}
+        <div class="row small-up-1 medium-up-3" >
+            {% for i in fichas_prod %}
+                <div class="columns">
+                    <div class=" card-article-hover card">
+                        <a href="/marca/{{ i.slug }}">
+                            <img  src="{{ i.image.url }}">
+                        </a>
+                        <div class="card-section">
+                            <a href="/marca/{{ i.slug }}">
+                                <h6 class="article-title">{{ i.title | truncatechars:30}}</h6>
+                            </a>
+                        </div>
+                        <div class="card-divider flex-container align-middle">
+                            <a href="" class="author">{{ i.user.get_full_name }}</a>
+                        </div>
+                        <div class="hover-border"></div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="product row">
+            <div class="center_column col-xs-12" >
+                <div class="d-inline-flex p-2 flex-wrap align-items-end align-content-between align-self-sm-stretch">
+                    {% for ficha in fichas_prod %}
+                        <div class="w-25 float-left d-inline-block">
+                            <div class="product-container" itemscope="" itemtype="https://schema.org/Product">
+                                <div class="left-block">
+                                    <div class="product-image-container"> 
+                                        <a class="product_img_link" href="{% url 'product_detail' pk=ficha.product_id.pk %}" 
+                                            title="{{ ficha.title | truncatechars:30 }}" itemprop="url"> 
+                                            <img class="replace-2x img-responsive" src="{{ ficha.src }}" alt="{{ ficha.title }}" 
+                                                title="{{ ficha.title }}" width="270" height="345" itemprop="image"> 
+                                        </a>                                    
+                                    </div>
+                                </div>
+                                <div class="right-block">
+                                    <h5 itemprop="name"> 
+                                        <a class="product-name" href="{% url 'product_detail' pk=ficha.product_id.pk %}" 
+                                            title="{{ ficha.title }}" itemprop="url"> 
+                                            {{ ficha.title }} 
+                                        </a>
+                                    </h5>
+                                    <span class="manufacturer"> 
+                                        <a href="https://diablaroja.es/marcas/fleshlight-99"> 
+                                            <strong>FLESHLIGHT</strong> 
+                                        </a> 
+                                    </span>                     
+                                </div>
+                            </div>                          
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <h4>· No hay Resultados ·</h4>
+    {% endif %}
+{% endblock %}
+
+{% if fichas_prod %}
+        <h4>Productos</h4>
+        <div class="product row">
+            <div class="center_column col-xs-12" >
+                <div class="d-inline-flex p-2 flex-wrap align-items-end align-content-between align-self-sm-stretch">
+                    {% for ficha in fichas_prod %}
+                        <div class="col-lg-2 col-md-3 mb-1 pl-1 pr-1">
+                            <div class="card">
+                                <div class="card-body">
+                                    <a href="#">
+                                    <strong>{{ ficha.title }}</strong></a>
+                                </div>
+                                <a href="#">
+                                    <img class="card-img-top" 
+                                    {% if ficha.image.url %}
+                                        src="{{ ficha.image.url }}" 
+                                    {% else %}
+                                        src="{% static 'img/no-foto.jpg' %}"
+                                    {% endif %}
+                                        alt="{{ ficha.title }}" title="{{ ficha.title }}"></a>
+                                <span class="manufacturer text-right"> 
+                                    <a href="#"><strong>{{ ficha.fabricante.name|upper}}</strong></a>
+                                </span>  
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <h6>· No hay Resultados ·</h6>
+    {% endif %}
+
+
+'''
+def fabricante__show(request,slug):      
+    fabricante_slug = slug.split('/')
+    fabricantes = Fabricante.objects.all().order_by('name')
+    fabricante_queryset = list(fabricantes)
+    all_slugs = [ x.slug for x in fabricante_queryset ]
+    parent = None
+    for slug in fabricante_slug:
+        if slug in all_slugs:
+            parent = get_object_or_404(Fabricante,slug=slug,parent=parent)
+        else:
+            product = get_object_or_404(Product, Q(ref=slug)|Q(slug=slug))
+            breadcrumbs_link = product.get_fab_list()
+            fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
+            breadcrumbs = zip(breadcrumbs_link, fabricante_name)
+            images = Imagen.objects.filter(product_id__pk=product.pk).order_by('-preferred')
+            return render(request, 'shop/product_detail.html', {
+                'product': product, 
+                'images':images,
+                'breadcrumbs':breadcrumbs,         
+            })
+    if parent:
+        breadcrumbs_link = parent.get_fab_list()
+        fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
+        breadcrumbs = zip(breadcrumbs_link, fabricante_name)
+        sub_fabricantes = parent.children_get.all()
+    else:
+        sub_fabricantes = Fabricante.objects.all(parent=parent)
+    fichas = Imagen.objects.filter(preferred=True, product_id__fabricante=parent).order_by('-product_id__updated')
+    return render(request, "shop/fabricante_detail.html", { 
+        'breadcrumbs':breadcrumbs,  
+        'ficha':parent,
+        'fichas_prod': fichas,
+        'sub_fabricantes': sub_fabricantes,
+    })
+
+    def show_category(request,hierarchy= None):
+    category_slug = hierarchy.split('/')
+    category_queryset = list(Category.objects.all())
+    all_slugs = [ x.slug for x in category_queryset ]
+    parent = None
+    for slug in category_slug:
+        if slug in all_slugs:
+            parent = get_object_or_404(Category,slug=slug,parent=parent)
+        else:
+            instance = get_object_or_404(Post, slug=slug)
+            breadcrumbs_link = instance.get_cat_list()
+            category_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
+            breadcrumbs = zip(breadcrumbs_link, category_name)
+            return render(request, "postDetail.html", {'instance':instance,'breadcrumbs':breadcrumbs})
+
+    return render(request,"categories.html",{'post_set':parent.post_set.all(),'sub_categories':parent.children.all()})
+    '''
+
+    <!--<div class="alert alert-default">
+                        {% if product.fabricante.parent %}
+                            <a href="/fab/{{ product.fabricante.parent.slug }}/">{{ product.fabricante.parent.name | upper }}</a><br>
+                        {% endif %}
+                        <a href="/fab/{% if product.fabricante.parent.slug %}{{ product.fabricante.parent.slug }}/{% endif %}{{product.fabricante.slug}}"> 
+                            <img class="card-img-fab" height="40px"
+                                {% if ficha.image.url %}
+                                    src="{{ product.fabricante.image.url }}" 
+                                {% else %}
+                                    src="{% static 'img/no-foto.jpg' %}"
+                                {% endif %}
+                                alt="{{ product.fabricante.name }}" title="{{ product.fabricante.name }}">
+                            <strong>{{ product.fabricante.name }}</strong> 
+                        </a> 
+                    </div>-->

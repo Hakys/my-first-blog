@@ -1,0 +1,27 @@
+
+{% load static %}
+<div class="fabricante row">
+    <div class="center_column col-xs-12" >
+        <div class="row">
+            {% for ficha in fichas %}
+                <div class="col-lg-3 col-md-4 mb-3">
+                    <div class="card">
+                        <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
+                            <img class="card-img-top" 
+                            {% if ficha.image.url %}
+                                src="{{ ficha.image.url }}" 
+                            {% else %}
+                                src="{% static 'img/no-foto.jpg' %}"
+                            {% endif %}
+                                alt="{{ ficha.name }}" title="{{ ficha.name }}"></a>
+                        <div class="card-body">
+                            <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
+                            <strong>{{ ficha.name }}</strong></a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+   

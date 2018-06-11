@@ -31,9 +31,38 @@ class Imagen_gen(models.Model):
         else: 
             preferred='No'
         return self.title+' ('+preferred+')'
-        
+
+#<categories>
+#   <category gesioid="26" ref="Penes Realisticos"><![CDATA[Juguetes XXX|Penes|Penes realisticos]]></category>
+#   <category gesioid="129" ref="Especial Gays"><![CDATA[Juguetes XXX|Especial Gays]]></category>
+#   <category gesioid="7" ref="Anal"><![CDATA[Juguetes XXX|Anal]]></category>
+#</categories>    
 '''
 class Categoria(models.Model):
+    name = models.CharField(max_length=50) 
+    slug = models.SlugField(blank=True, null=True)
+    activo = models.BooleanField(default=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True ,related_name='sub_category')
+    image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
+    gesioid = models.IntegerField(unique=True,null=True)
+
+    def __str__(self):  
+        if self.activo: 
+            activo='Si' 
+        else: 
+            activo='No'                          
+        full_path = [self.name+' ('+activo+')']                  
+        k = self.parent                          
+        while k is not None:
+            full_path.append(k.name)
+            k = k.parent
+        return ' -> '.join(full_path[::-1])    
+    
+    class Meta:
+        ordering = ('name',)
+        verbose_name = 'Categoria'
+        verbose_name_plural = 'Categorías'
+
     name = models.CharField(max_length=200)    
     #image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE,blank=True,null=True)
     gesioid = models.IntegerField(unique=True,null=True)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
@@ -62,17 +91,17 @@ class Categoria(models.Model):
 #<brand><![CDATA[REALROCK 100% FLESH]]></brand>
 #<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
 class Fabricante(models.Model):
-    name = models.CharField(max_length=50) 
-    slug = models.SlugField(blank=True, null=True)
+    name = models.CharField(max_length=50,unique=True) 
+    slug = models.SlugField(max_length=200)
     activo = models.BooleanField(default=True)
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, default=models.SET_NULL, null=True ,related_name='children')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True ,related_name='children')
     image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):  
         if self.activo: 
             activo='Si' 
         else: 
-            activo='No'                          
+            activo='No'         
         full_path = [self.name+' ('+activo+')']                  
         k = self.parent                          
         while k is not None:
@@ -81,12 +110,24 @@ class Fabricante(models.Model):
         return ' -> '.join(full_path[::-1])    
     
     class Meta:
+        unique_together = ('slug', 'parent',)
         ordering = ('name',)
-        verbose_name = 'fabricantes'
-        verbose_name_plural = 'marcas'
+        verbose_name = "Fabricante"
+        verbose_name_plural = "Marcas"
+
+    def get_fab_list(self,separador):
+        k = self.parent
+        breadcrumb = ["dummy"]
+        while k is not None:
+            breadcrumb.append(k.slug)
+            k = k.parent
+
+        for i in range(len(breadcrumb)-1):
+            breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
+        return breadcrumb[-1:0:-1]
 
 class Product(models.Model): 
-    slug = models.SlugField(max_length=20,unique=True,blank=True)
+    slug = models.SlugField(max_length=200,unique=True,null=False)
     portada = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
     ref = models.CharField(max_length=20,unique=True)
     updated = models.DateTimeField('Última Actualización',default=timezone.now)
@@ -104,15 +145,20 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     html_description = models.TextField(blank=True, null=True)		
     release_date = models.DateTimeField('Lanzamiento',blank=True, null=True)
-    fabricante = models.ForeignKey(Fabricante,on_delete=models.SET_NULL,null=True)
+    fabricante = models.ForeignKey(Fabricante, on_delete=models.CASCADE, null=True)
+    
+    destocking = models.BooleanField('Liquidación',default=False)    
+    sale = models.BooleanField('Rebajado',default=False)
+    new = models.BooleanField('Nuevo',default=True)
+    #<stock><location path="General">50</location></stock>
+    stock = models.IntegerField(default=0)
     #category = models.ForeignKey('Categoria', null=True, blank=True, on_delete=None)
     #categorias = models.ManyToManyField(Categoria)
     #prepaid_reservation = models.BooleanField('Pre-Pedido',default=False)
-    #destocking = models.BooleanField('Liquidación',default=False)
+    
     #shipping_weight_grame = models.IntegerField(default=0)
     #brand = models.CharField(max_length=200,blank=True)
-    #sale = models.BooleanField('Rebajado',default=False)
-    #new = models.BooleanField('Nuevo',default=True)
+
     #<min_units_per_order>1</min_units_per_order>
 	#<max_units_per_order>999</max_units_per_order>
 	#<min_amount_per_order>1</min_amount_per_order>
@@ -140,22 +186,22 @@ class Product(models.Model):
 	#			<src>https://store.dreamlove.es/productos/imagenes/img_9450_56829edf85f00d98b60692dfeb77ae53_1.jpg</src>
 	#		</image>
 	#	</images>
-	#	<stock>
-	#		<location path="General">50</location>
-	#	</stock>
 	#published_date = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return self.ref+' ('+str(self.updated)+')'
+        if self.get_fab_list(' -> '):
+            fab_list = ' {0}'.format(self.get_fab_list(' -> '))
+        return self.ref+fab_list+' ('+str(self.updated)+')'
     
     class Meta:
         ordering = ('-release_date',)
+    
     def publish(self):
         #self.published_date = timezone.now()
         self.available = True
         self.save()
     
-    def get_fab_list(self):
+    def get_fab_list(self,separador):
         k = self.fabricante
         breadcrumb = ["dummy"]
         while k is not None:
@@ -163,11 +209,10 @@ class Product(models.Model):
             k = k.parent
 
         for i in range(len(breadcrumb)-1):
-            breadcrumb[i] = '/'.join(breadcrumb[-1:i-1:-1])
-        return breadcrumb[-1:0:-1]
+            breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
+        return breadcrumb[-1:0:-1]      
 
-#fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')        
-        
+#fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')  
 class Imagen(models.Model):
     title = models.CharField(max_length=200,blank=True,null=True)
     name = models.CharField(max_length=200,blank=True,null=True)
@@ -183,7 +228,7 @@ class Imagen(models.Model):
             preferred='Sí' 
         else: 
             preferred='No'
-        return self.ref+' '+self.title+' ('+preferred+')'          
+        return self.ref+' '+self.title+' ('+preferred+')'    
 
 fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
 
@@ -208,8 +253,9 @@ class Externo(models.Model):
             print('We failed to reach a server.')
             print('Reason: '+e.reason)
         else:        
-            self.file.save(self.name+'.xml', response)    
+            self.file.save(self.name+'.xml', response, False)    
             self.updated_date=timezone.now()
+            Product.objects.all().update(updated=datetime.min)
             self.n_productos=0
             self.n_fabricantes=0
             self.n_imagenes=0
@@ -223,7 +269,7 @@ class Externo(models.Model):
         return self.name+'.xml (P:'+str(self.n_productos)+')(I:'+str(self.n_imagenes)+') ('+str(self.updated_date)+')'
 
 class Configuracion(models.Model):
-    variable = models.CharField(max_length=200,null=False)
+    variable = models.CharField(max_length=200,null=False,unique=True)
     valor = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)
 
@@ -232,4 +278,9 @@ class Configuracion(models.Model):
             activo='Si' 
         else: 
             activo='No'
-        return self.variable+': '+self.valor+'('+activo+')'
+
+        if self.valor: 
+            valor=self.valor
+        else: 
+            valor='- '    
+        return self.variable+': '+valor+'('+activo+')'

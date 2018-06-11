@@ -1,34 +1,92 @@
+from .models import *
+from .forms import ExternoForm
 from django.shortcuts import render, get_object_or_404, redirect, render_to_response
 from django.utils import timezone
 from django.utils.text import slugify
+from django.utils.dateparse import parse_datetime
 from datetime import datetime
 from django.db import models, IntegrityError
 from django.db.models import Q
-from .models import * #Product, Imagen, Imagen_gen, Externo, Configuracion, Fabricante #, Categoria
-from .forms import ExternoForm
 import xml.etree.ElementTree as ET
 from django.conf import settings
 from django.core.files import File
 from django.core.files.storage import Storage, FileSystemStorage
 from urllib.request import Request, urlopen, URLError, HTTPError  
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils.dateparse import parse_datetime
 from django.http import HttpResponse
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+
+def init_loaddata(request):
+    salida=0
+    try:    
+        obj = Configuracion(variable='beneficio', valor='60', activo=True)
+        obj.save()
+    except IntegrityError as e:
+        print(obj, e)
+    try:    
+        obj = Configuracion(variable='product_limite', valor='500', activo=True)
+        obj.save()
+    except IntegrityError as e:
+        print(obj, e)
+    try:    
+        obj = Configuracion(variable='imagen_limite', valor='1000', activo=True)
+        obj.save()
+    except IntegrityError as e:
+        print(obj, e)
+    try:    
+        obj = Configuracion(variable='fabricante_limite', valor='500', activo=True)
+        obj.save()
+    except IntegrityError as e:
+        print(obj, e)
+    try:    
+        obj = Configuracion(variable='prod_page', valor='24', activo=True)
+        obj.save()
+    except IntegrityError as e:
+        print(obj, e)
+    try:    
+        obj = Configuracion(variable='prod_home', valor='24', activo=True)
+        obj.save()
+    except IntegrityError as e:
+        print(obj, e)
+    try:    
+        obj = Configuracion(variable='run_cron',valor='',activo=True)    
+        obj.save()
+    except IntegrityError as e:
+        print(obj, e)
+    try:    
+        obj = Fabricante(name='DIABLA ROJA', slug=slugify('DIABLA ROJA'), parent=None)
+        obj.save() 
+    except IntegrityError as e:
+        print(obj, e)
+    return salida
 
 def product_list(request):
-    todo = Imagen.objects.filter(preferred=True).order_by('-product_id__release_date')[:15]
-    return render(request, 'shop/product_list.html', {'todo':todo})
+    todo = Imagen.objects.filter(preferred=True).order_by('-product_id__release_date')    
+    prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
+    #print(prod_page)
+    paginator = Paginator(todo, prod_page)
+    page = request.GET.get('page')
+    todo_paginado = paginator.get_page(page)
+    return render(request, 'shop/product_list.html', {'todo':todo_paginado})
 
-def product_grid(request):
-    fichas = Imagen.objects.filter(preferred=True).order_by('-product_id__release_date')[:24]  
-    return render(request, 'shop/product_grid.html',{
-        'fichas': fichas,
+def home_grid(request):
+    fichas_prod = Imagen.objects.filter(preferred=True,product_id__new=True).order_by('-product_id__created_date')[:24]  
+    return render(request, 'shop/home_grid.html',{
+        'fichas_prod': fichas_prod,
     })
 
 def product_detail(request, pk):
-    product = get_object_or_404(Product, Q(pk=pk)|Q(ref=pk)|Q(slug=pk))
+    product = get_object_or_404(Product, pk=pk)
     images = Imagen.objects.filter(product_id__pk=product.pk).order_by('-preferred')
-    breadcrumbs_link = product.get_fab_list()
+    breadcrumbs_link = product.get_fab_list('/')
+    fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
+    breadcrumbs = zip(breadcrumbs_link, fabricante_name)
+    return render(request, 'shop/product_detail.html', {'product': product, 'images':images, 'breadcrumbs':breadcrumbs})
+
+def product_detail_slug(request, slug):
+    product = get_object_or_404(Product, Q(ref=slug)|Q(slug=slug))
+    images = Imagen.objects.filter(product_id__pk=product.pk).order_by('-preferred')
+    breadcrumbs_link = product.get_fab_list('/')
     fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
     breadcrumbs = zip(breadcrumbs_link, fabricante_name)
     return render(request, 'shop/product_detail.html', {'product': product, 'images':images, 'breadcrumbs':breadcrumbs})
@@ -106,40 +164,45 @@ def externo_importar(request, pk):
 
 def externo_cron(request):
     try:
-        ext = Externo.objects.get(name='DreamLoveFile')
+        run_cron=Configuracion.objects.get(variable='run_cron')
     except ObjectDoesNotExist as e:
-        externo_dreamlove(request)
-        ext = get_object_or_404(Externo, name='DreamLoveFile')
-    
-    tree=ET.parse(ext.path())
-    root=tree.getroot() 
-    #print('.'+str(proc.get('retorno')))
-    if not procesar_productos(root).get('retorno'): 
-        print('Productos Hecha')
-        if not procesar_fabricantes(root).get('retorno'): 
-            print('Fabricantes Hecha')
-            if not procesar_imagenes(root).get('retorno'):  
-                print('Imagenes Hecha')
-                salida=0
+        init_loaddata(request)
+        run_cron=Configuracion.objects.get(variable='run_cron')
+    if run_cron.activo:
+        try:
+            ext = Externo.objects.get(name='DreamLoveFile')
+        except ObjectDoesNotExist as e:
+            externo_dreamlove(request)
+            ext = get_object_or_404(Externo, name='DreamLoveFile')
+        tree=ET.parse(ext.path())
+        root=tree.getroot() 
+        if not procesar_productos(root).get('retorno'): 
+            if not procesar_fabricantes(root).get('retorno'): 
+                if not procesar_imagenes(root).get('retorno'):  
+                    ext.importar()
+                    ext.save()
+                    salida=0
+                else:
+                    salida=-1
             else:
-                salida=-3
+                salida=-2
         else:
-            salida=-2
+            salida=-3
+        ext.n_productos = len(Product.objects.all())
+        ext.n_fabricantes = len(Fabricante.objects.all())
+        ext.n_imagenes = len(Imagen.objects.all())
+        #externo.n_categorias = len(Categoria.objects.all())
+        ext.save()
+        '''
+        context = {
+            'externo': externo,
+            'tamano': externo.file.size/1048576,
+            'salida': salida['salida'],
+        }
+        return render(request, 'shop/externo_detail.html', context) 
+        '''
     else:
-        salida=-1
-    ext.n_productos = len(Product.objects.all())
-    ext.n_fabricantes = len(Fabricante.objects.all())
-    ext.n_imagenes = len(Imagen.objects.all())
-    #externo.n_categorias = len(Categoria.objects.all())
-    ext.save()
-    '''
-    context = {
-        'externo': externo,
-        'tamano': externo.file.size/1048576,
-        'salida': salida['salida'],
-    }
-    return render(request, 'shop/externo_detail.html', context) 
-    '''
+        salida=-4
     return HttpResponse(salida)
 
 def procesar_productos(root):
@@ -182,7 +245,7 @@ def procesar_productos(root):
                                     else: 
                                         p.title = p.ref
                         p.description = p.title
-                        p.slug=slugify(p.title)
+                        p.slug = slugify(p.title)
                         p.available = prod.find('available').text  
                         p.cost_price = prod.find('cost_price').text
                         p.price = prod.find('price').text
@@ -191,11 +254,19 @@ def procesar_productos(root):
                         p.default_shipping_cost = prod.find('default_shipping_cost').text
                         p.updated = updated                    
                         p.html_description = prod.find('html_description').text
-                        p.delivery_desc= prod.find('delivery_desc').text
-                        p.vat= prod.find('vat').text
-                        p.unit_of_measurement= prod.find('unit_of_measurement').text
-                        p.release_date= prod.find('release_date').text
-                        
+                        p.delivery_desc = prod.find('delivery_desc').text
+                        p.vat = prod.find('vat').text
+                        p.unit_of_measurement = prod.find('unit_of_measurement').text
+                        p.release_date = prod.find('release_date').text
+                        p.destocking = prod.find('destocking').text   
+                        p.sale = prod.find('sale').attrib['value']
+                        #print(p.sale)
+                        p.new = prod.find('new').attrib['value']
+                        #print(p.new)
+                        #<stock><location path="General">50</location></stock>
+                        stock = prod.find('stock')
+                        p.stock = stock.find('location').text
+
                         p.save() #created_date, 
                         actualizado=actualizado+1                
                     except IntegrityError as e:    
@@ -282,13 +353,19 @@ def procesar_imagenes(root):
                                     img.url = image.find('src').text
                                     img.preferred = image.get('preferred')
                                     img.save()  
+                                    '''
+                                    if img.preferred:
+                                        p.portada = Imagen.objects.get(pk=img.pk) 
+                                        p.save()     
+                                    '''
                                     nuevo_img=nuevo_img+1                     
                                 except IntegrityError as e:
                                     print('ERROR REF: '+p.ref)  
                                     print('ERROR SCR: ')
                                     print(image.find('src'))  
                                     error_img=error_img+1 
-                                    pass                                
+                                    pass         
+                                                
                             procesada=procesada+1
                 n=n+1 
             else:
@@ -346,12 +423,12 @@ def procesar_fabricantes(root):
                 try:
                     if prod.find('brand_hierarchy').text:
                         fabricante_jerarquia = prod.find('brand_hierarchy').text  
-                        parent = None  
+                        parent = Null
                         for fab_name in fabricante_jerarquia.split('|'):
                             if fab_name:
                                 name=fab_name
                             else:
-                                name = 'Diabla Roja'
+                                name = 'DIABLA ROJA'
                                 error=error+1
                             parent_ppal=parent
                             try:
@@ -370,7 +447,7 @@ def procesar_fabricantes(root):
                     if prod.find('brand').text:
                         fab_name = prod.find('brand').text
                 except:
-                    fab_name = 'Diabla Roja'
+                    fab_name = 'DIABLA ROJA' 
                     error=error+1
                 try:
                     fab = Fabricante.objects.get(name=fab_name)
@@ -455,38 +532,8 @@ def templateshop(request):
     return render(request,"shop/templateshop.html")
 
 def product_test(request):
-    name='DreamLoveFile'
-    ext = Externo.objects.get(name=name)
-    tree=ET.parse(ext.path())
-    root=tree.getroot() 
-    n=0
-    buscado = 'D-196688'
-    for pro in root.findall('product'):
-        ref=pro.find('public_id').text
-        n=n+1
-        if ref == buscado:
-            print(pro.find('title').text)
-    print('Numero: '+str(n))
-    return redirect('product_list')
-    """
-    url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml'
-    tree=ET.parse(urlopen(url))
-    root=tree.getroot()  
-    n=0
-    buscado = 'D-196688'
-    for pro in root.findall('product'):
-        ref=pro.find('public_id').text
-        n=n+1
-        #if n == 100:
-        #    break
-        if ref == buscado:
-            print(pro.find('title').text)
-    print('Numero: '+str(n))
-    #xml_data=xml_file.read()
-    #xmlDoc = ET.parse( xml_data ) 
-    #print(xmlDoct)
-    return redirect('product_list')
-    """
+    init_loaddata(request)
+    return redirect('home_grid')
 
 def product_reload(request):
     #path = "static/store/prueba.xml"
@@ -529,67 +576,52 @@ def product_reload(request):
         #root.getiterator()
     return redirect('product_list')
 
-def fabricante_list(request):
-    fabricantes = Fabricante.objects.filter(parent=None)
-    return render(request,"shop/fabricante_list.html",{
-        'lista':fabricantes,
+def fabricante_home(request):
+    fichas = Fabricante.objects.filter(parent=None)
+    return render(request,"shop/fabricante_home.html",{
+        'fichas': fichas,
     })
-'''
+
+def fabricante_list(request):
+    fichas = Fabricante.objects.filter(parent=None)
+    return render(request,"shop/fabricante_list.html",{
+        'fichas': fichas,
+    })
+
+def fabricante_home(request):
+    fichas = Fabricante.objects.filter(parent=None)
+    return render(request,"shop/fabricante_home.html",{
+        'fichas': fichas,
+    })
+
 def fabricante_detail(request,slug):
-    
-    fabricante = Fabricante.objects.filter(slug=slug)
-    salida ='Fabricante'
-    context = {
-        'fabricante': fabricante,
-        'salida': salida,
-    }
-    return render(request, 'shop/fabricante_detail.html', context)
-'''
-def fabricante_show(request,hierarchy= ''):      
-    fabricante_slug = hierarchy.split('/')
+    prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
     fabricantes = Fabricante.objects.all().order_by('name')
+    fabricante_slug = slug.split('/')
     fabricante_queryset = list(fabricantes)
     all_slugs = [ x.slug for x in fabricante_queryset ]
     parent = None
     for slug in fabricante_slug:
         if slug in all_slugs:
             parent = get_object_or_404(Fabricante,slug=slug,parent=parent)
-        else:
-            product = get_object_or_404(Product, Q(pk=slug)|Q(ref=slug)|Q(slug=slug))
-            breadcrumbs_link = product.get_fab_list()
-            fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
-            breadcrumbs = zip(breadcrumbs_link, fabricante_name)
-            images = Imagen.objects.filter(product_id__pk=product.pk).order_by('-preferred')
-            return render(request, 'shop/product_detail.html', {
-                'product': product, 
-                'images':images,
-                'breadcrumbs':breadcrumbs,                
-            })
-    
-    #'sub_fabricantes':children,children = Fabricante.objects.filter(parent__slug=parent.slug)
-    fichas = Imagen.objects.filter(preferred=True, product_id__fabricante=parent).order_by('-product_id__updated')
+    breadcrumbs_link = parent.get_fab_list('/')
+    #breadcrumbs_link.append(slug)
+    #print(breadcrumbs_link)
+    fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
+    breadcrumbs = zip(breadcrumbs_link, fabricante_name)
     sub_fabricantes = parent.children.all()
-    return render(request, "shop/fabricante_detail.html", {
-        'ficha':parent,
-        'fichas_prod': fichas,
-        'sub_fabricantes': sub_fabricantes,
+    #fichas = Imagen.objects.filter(preferred=True, product_id__fabricante_slug__in=breadcrumbs_link).order_by('-product_id__updated')
+    #fichas_prod = Product.objects.filter(fabricante__in=sub_fabricantes)
+    fichas_prod = Imagen.objects.filter(
+        Q(preferred=True),
+        Q(product_id__fabricante__in=sub_fabricantes)|Q(product_id__fabricante=parent)).order_by('-product_id__release_date','product_id__fabricante__name')
+    paginator = Paginator(fichas_prod, prod_page)
+    page = request.GET.get('page')
+    fichas_prod_paginado = paginator.get_page(page)
+    return render(request, "shop/fabricante_detail.html", {  
+        'breadcrumbs': breadcrumbs,  
+        'ficha': parent,
+        'sub_fabricantes': sub_fabricantes, 
+        'fichas_prod': fichas_prod_paginado,
+        'n_prod': paginator.count
     })
-   
-    '''
-    def show_category(request,hierarchy= None):
-    category_slug = hierarchy.split('/')
-    category_queryset = list(Category.objects.all())
-    all_slugs = [ x.slug for x in category_queryset ]
-    parent = None
-    for slug in category_slug:
-        if slug in all_slugs:
-            parent = get_object_or_404(Category,slug=slug,parent=parent)
-        else:
-            instance = get_object_or_404(Post, slug=slug)
-            breadcrumbs_link = instance.get_cat_list()
-            category_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
-            breadcrumbs = zip(breadcrumbs_link, category_name)
-            return render(request, "postDetail.html", {'instance':instance,'breadcrumbs':breadcrumbs})
-
-    return render(request,"categories.html",{'post_set':parent.post_set.all(),'sub_categories':parent.children.all()})
-    '''

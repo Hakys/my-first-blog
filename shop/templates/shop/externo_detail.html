@@ -1,6 +1,7 @@
 {% extends 'shop/base.html' %}
 {% load static %}
 {% block content %}
+    <br>
     <div class="row product"> 
         <div class="pb-left-column col-xs-12 col-sm-4 col-md-4">              
             <img class="img-responsive img-homepage" src="{% static 'img/logo.png' %}" alt="{{ externo.name }}" >
@@ -15,10 +16,10 @@
             <p>
                 <a href="{% static 'store/' %}{{externo.file.url}}" target="_blank">              
                 <span class="glyphicon glyphicon-new-window"></span>{{externo.file.name}}</a><br>
+                Tamaño: {{context.tamano|floatformat:2}} Mb.<br> 
                 Actualizado: {{ externo.updated_date|date:"d/m/Y, H:i " }}
             </p>
-            <p>
-                Tamaño: {{context.tamano|floatformat:2}} Mb.<br> 
+            <p>               
                 Nº Productos: {{externo.n_productos}}<br>
                 Nº Fabricantes: {{externo.n_fabricantes}}<br>
                 Nº Imagenes: {{externo.n_imagenes}}<br> 
@@ -28,7 +29,12 @@
                 <li><a class="btn btn-default" href="{% url 'externo_importar' pk=externo.pk %}">Importar Fichero</a></li> 
                 <li><a class="btn btn-default" href="{% url 'externo_procesar_productos' pk=externo.pk %}">Procesar Productos</a></li> 
                 <li><a class="btn btn-default" href="{% url 'externo_procesar_fabricantes' pk=externo.pk %}">Procesar Fabricantes</a></li> 
-                <li><a class="btn btn-default" href="{% url 'externo_procesar_imagenes' pk=externo.pk %}">Procesar Imagenes</a></li>              
+                <li><a class="btn btn-default" href="{% url 'externo_procesar_imagenes' pk=externo.pk %}">Procesar Imagenes</a></li>    
+                <hr>          
+                <li><a class="btn btn-default bt-lg" href="{% url 'externo_cron' %}" aria-hidden="true">
+                        
+                        <span class="glyphicon glyphicon-time"></span>
+                    Proceso Automático CRON</a></li>         
             </ol></div>
             <!--Size: {{externo.file.size}} byte Path [{{externo.file.path}}] -->
         </div>

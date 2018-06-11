@@ -5,11 +5,31 @@
  */
 
 body {
-  padding-top: 54px;
+  padding-top: 66px;
 }
 
 @media (min-width: 992px) {
   body {
-    padding-top: 56px;
+    padding-top: 66px;
   }
+}
+
+.card-body {
+  padding: 0.25rem;
+}
+.card-title{
+  font-size:1rem;
+}
+.card-text{
+  font-size:0.75rem;
+  line-height: 1.25;
+}
+.card-img-top{
+  padding: 0.20rem 0.5rem;
+}
+.card-img-fab{
+  min-height: 30px;
+}
+.card{
+  font-size: 12px;
 }

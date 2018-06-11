@@ -17,19 +17,16 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 		<script src="{% static 'js/ajax.js' %}"></script>
 		<link href="https://fonts.googleapis.com/css?family=Lobster|Quicksand|Work+Sans&subnet=latin,latin-ext" rel="stylesheet">
+
 		<link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %} " rel="stylesheet">
 		<link href="{% static 'css/shop-homepage.css' %}" rel="stylesheet">
 		<link href="{% static 'css/shop.css' %}" rel="stylesheet">
-		<style>
-			.navbar{
-				padding:0.25rem 1rem;
-			}
-		</style>
 	</head>
 	<body>
 		<!-- Navigation -->
 		<nav class="navbar navbar-expand-lg navbar-dark bg-danger fixed-top">
 			<div class="container" style="min-width: 400px">
+				<div>
 				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" 
 					aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>
@@ -37,7 +34,8 @@
 				<a class="navbar-brand" href="/">
 					<img src="{% static 'img/diablaroja.png' %}" alt="Diabla Roja Shop" width="50">
 					Diabla Roja Catálogo</a>
-				<div class="collapse navbar-collapse" id="navbarResponsive">
+				</div>
+				<div class="collapse navbar-collapse pt-3" id="navbarResponsive">
 					<ul class="navbar-nav ml-auto">
 						<li class="nav-item active">
 							<a class="nav-link" href="/">Inicio
@@ -45,17 +43,21 @@
 							</a>
 						</li>
 						<li class="nav-item">
+							<a class="nav-link" href="/admin/" target="_blank">Admin</a></li> 
+						<li class="nav-item">
 							<a class="nav-link" href="{% url 'product_test' %}">Test</a></li> 
 						<li class="nav-item">
 							<a class="nav-link" href="{% url 'externo_list' %}">Externo</a></li> 
 						<li class="nav-item">
-							<a class="nav-link" href="{% url 'fabricante_list' %}">Fabricantes</a></li> 			
-					  	<li class="nav-item">
+							<a class="nav-link" href="{% url 'fabricante_home' %}">Marcas</a></li> 			
+						<!--  
+						<li class="nav-item">
 							<a class="nav-link" href="#">About</a></li>
 					  	<li class="nav-item">
 							<a class="nav-link" href="#">Services</a></li>
 					  	<li class="nav-item">
 							<a class="nav-link" href="#">Contact</a></li>
+						-->
 						<li class="nav-item">
 							<form class="nav-item navbar-form">
 								{% csrf_token %}
@@ -73,7 +75,7 @@
 				</div>
 			</div>
 		</nav>
-		<div class="content container float-left" style="width:400px">		
+		<div class="content container float-left mt-3" style="width:400px">		
 			{%if salida%}
 				<div class="alert alert-success alert-dismissible">
 					<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
@@ -85,10 +87,9 @@
 		<div class="content container float-right" style="width:400px">
 			<ul id="search-results" class="list-group list-group-xs"></ul>
 		</div>
-		<div class="content container">	
+		<div class="content container ">	
 			<div class="row">
-				<div class="col-md-8">
-					<br>
+				<div class="col-md-8 mt-4">
 					{% block content %}
 					{% endblock %}
 				</div>

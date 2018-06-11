@@ -1,10 +1,11 @@
-<nav aria-label="breadcrumb">
+
+<nav>
     <ol class="breadcrumb">
-        <!--<li class="breadcrumb-item"><a href="/">Inicio</a></li>-->
-        <li class="breadcrumb-item"><h6><a href="{% url 'fabricante_list' %}">TODAS MARCAS</a></h6></li>
-        {% for slug,name in breadcrumbs %}
-            <li class="breadcrumb-item"><a href="/fabricante/{{ slug }}">{{ name }}</a></li>
-        {% endfor %}
-        <!--<li class="breadcrumb-item active" aria-current="page">{{product.title}}</li>-->
+        <li class="breadcrumb-item"><strong><a href="{% url 'fabricante_home' %}">MARCAS </a></strong></li>
+        {% if breadcrumbs %}
+            {% for slug,name in breadcrumbs %}
+                <li class="breadcrumb-item"><a href="{% url 'fabricante_detail' slug=slug %}">{{ name | upper }}</a></li>
+            {% endfor %}
+        {% endif %}
     </ol>
 </nav>

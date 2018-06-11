@@ -1,16 +1,20 @@
 from django.conf.urls import include, url
 from . import views
+from django.urls import path
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
-	url(r'^$', views.product_grid, name='product_grid'), 
+	url(r'^$', views.home_grid, name='home_grid'), 
 
     url(r'^templateshop/$', views.templateshop, name="templateshop"),
     url(r'^cron/$', views.externo_cron, name='externo_cron'),
     url(r'^test/$', views.product_test, name='product_test'),     
     url(r'^reload/$', views.product_reload, name='product_reload'),
     
-    url(r'^product/$', views.product_list, name='product_list'),
-    url(r'^product/(?P<pk>[0-9]+)/$', views.product_detail, name='product_detail'),    
+    url(r'^product/$', views.product_list, name='product_list'),    
+    url(r'^product/(?P<pk>[0-9]+)/$', views.product_detail, name='product_detail'),
+    url(r'^product/(?P<slug>.+)/$', views.product_detail_slug, name='product_detail_slug'), 
+
     url(r'^search/$', views.product_search, name='product_search'),
 
     url(r'^ext/$', views.externo_list, name='externo_list'),
@@ -20,10 +24,24 @@ urlpatterns = [
     url(r'^ext/(?P<pk>[0-9]+)/importar/$', views.externo_importar, name='externo_importar'),
     url(r'^ext/(?P<pk>[0-9]+)/procesar_productos/$', views.externo_procesar_productos, name='externo_procesar_productos'),
     url(r'^ext/(?P<pk>[0-9]+)/procesar_imagenes/$', views.externo_procesar_imagenes, name='externo_procesar_imagenes'),
-    #url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'), 
     url(r'^ext/(?P<pk>[0-9]+)/procesar_fabricantes/$', views.externo_procesar_fabricantes, name='externo_procesar_fabricantes'),   
     
-    url(r'^fabricante/$', views.fabricante_list, name='fabricante_list'),
-    url(r'^fabricante/(?P<hierarchy>.+)/$', views.fabricante_show, name='fabricante_show'),
-    
-    ]
+    url(r'^fab/$', views.fabricante_home, name='fabricante_home'),
+    url(r'^fab/(?P<slug>.+)/$', views.fabricante_detail, name='fabricante_detail'),
+
+    path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
+   
+    ]    
+#   url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'), 
+#    
+#   https://getbootstrap.com/docs/4.0/
+#   https://www.w3schools.com/bootstrap4/
+#   https://getbootstrap.com/docs/3.3/customize/
+#   https://docs.djangoproject.com/en/2.0/
+#   https://devcode.la/cursos/
+
+#   http://www.louviva.com/    
+
+#   https://grantorrent.net/
+#   https://zooqle.com
+#   https://www.torrentdownloads.me/

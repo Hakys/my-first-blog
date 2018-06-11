@@ -1,0 +1,10 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+{% block content %}
+    <h1>Fabricantes y Marcas</h1>
+    {% if fichas %}
+        {% include 'shop/fabricante_grid.html' %}
+    {% else %}
+        <h4>· No Resultados ·</h4>
+    {% endif %}
+{% endblock %}

@@ -1,34 +1,33 @@
 {% extends 'shop/base.html' %}
 {% load static %}
 {% block content %}
-    <br>
-    {% if sub_categories %}
-        <h3>Marcas / Fabricantes</h3>
-        {% for i in sub_categories %}
-            <a href="{{ i.slug }}"> {{ i.name }} </a>
-        {% endfor %}
-    {% endif %}
-    <div class="row small-up-1 medium-up-3" >
-        {% if lista %}
-            <ul>
-            {% for i in lista %}
-                <li>
-                <div class="columns">
-                    <div class=" card-article-hover card">
-                        <a href="/fabricante/{{ i.slug }}">
-                            <img  src="{{ i.image.url }}">
-                        </a>
-                        <div class="card-section">
-                            <a href="/fabricante/{{ i.slug }}">
-                                <h6 class="article-title">{{ i.name | truncatechars:30}}</h6>
-                            </a>
+    <h1>Fabricantes y Marcas</h1>
+    {% if fichas %}
+        <div class="fabricante row">
+            <div class="center_column col-xs-12" >
+                <div class="row">
+                    {% for ficha in fichas %}
+                        <div class="col-lg-3 col-md-4 mb-3">
+                            <div class="card">
+                                <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
+                                    <img class="card-img-top" 
+                                    {% if ficha.image.url %}
+                                        src="{{ ficha.image.url }}" 
+                                    {% else %}
+                                        src="{% static 'img/no-foto.jpg' %}"
+                                    {% endif %}
+                                        alt="{{ ficha.name }}" title="{{ ficha.name }}"></a>
+                                <div class="card-body">
+                                    <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
+                                    <strong>{{ ficha.name }}</strong></a>
+                                </div>
+                            </div>
                         </div>
-                        <div class="hover-border"></div>
-                    </div>
+                    {% endfor %}
                 </div>
-                </li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    </div>
+            </div>
+        </div>
+    {% else %}
+        <h4>· No hay Resultados ·</h4>
+    {% endif %}
 {% endblock %}
