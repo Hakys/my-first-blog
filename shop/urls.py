@@ -4,16 +4,20 @@ from django.urls import path
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-	url(r'^$', views.home_grid, name='home_grid'), 
+	url(r'^$', views.product_home, name='product_home'), 
 
     url(r'^templateshop/$', views.templateshop, name="templateshop"),
     url(r'^cron/$', views.externo_cron, name='externo_cron'),
     url(r'^test/$', views.product_test, name='product_test'),     
     url(r'^reload/$', views.product_reload, name='product_reload'),
     
-    url(r'^product/$', views.product_list, name='product_list'),    
+    url(r'^product/$', views.product_list, name='product_list'),        
+    url(r'^product/nuevos/$', views.product_nuevos, name='product_nuevos'),
+    url(r'^product/rebajados/$', views.product_rebajados, name='product_rebajados'),
+    url(r'^product/descatalogados/$', views.product_descatalogados, name='product_descatalogados'),
     url(r'^product/(?P<pk>[0-9]+)/$', views.product_detail, name='product_detail'),
-    url(r'^product/(?P<slug>.+)/$', views.product_detail_slug, name='product_detail_slug'), 
+     url(r'^product/(?P<slug>.+)/actualizar/$', views.product_actualizar, name='product_actualizar'),
+     url(r'^product/(?P<slug>.+)/$', views.product_detail_slug, name='product_detail_slug'), 
 
     url(r'^search/$', views.product_search, name='product_search'),
 
@@ -29,6 +33,8 @@ urlpatterns = [
     url(r'^fab/$', views.fabricante_home, name='fabricante_home'),
     url(r'^fab/(?P<slug>.+)/$', views.fabricante_detail, name='fabricante_detail'),
 
+    url(r'^cat/$', views.categoria_home, name='categoria_home'),
+    
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
    
     ]    

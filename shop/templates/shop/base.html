@@ -21,6 +21,9 @@
 		<link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %} " rel="stylesheet">
 		<link href="{% static 'css/shop-homepage.css' %}" rel="stylesheet">
 		<link href="{% static 'css/shop.css' %}" rel="stylesheet">
+		<style>
+
+		</style>
 	</head>
 	<body>
 		<!-- Navigation -->
@@ -49,7 +52,21 @@
 						<li class="nav-item">
 							<a class="nav-link" href="{% url 'externo_list' %}">Externo</a></li> 
 						<li class="nav-item">
-							<a class="nav-link" href="{% url 'fabricante_home' %}">Marcas</a></li> 			
+							<a class="nav-link" href="{% url 'fabricante_home' %}">Marcas</a></li> 	
+						<li class="nav-item">
+							<a class="nav-link">Categorías</a></li> 	
+						<li class="nav-item dropdown">
+							<a class="nav-link dropdown-toggle" id="dropdownMenuCat" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								Productos<span class="caret"></span></a>
+							<ul class="dropdown-menu alert-danger" aria-labelledby="dropdownMenuCat">	
+								<li ><a class="nav-link alert-danger" href="{% url 'product_home' %}">Próximos Lanzamientos</a></li>							
+								<li ><a class="nav-link alert-danger" href="{% url 'product_nuevos' %}">Novedades</a></li>
+								<li ><a class="nav-link alert-danger" href="{% url 'product_rebajados' %}">Rebajados</a></li>
+								<li ><a class="nav-link alert-danger" href="{% url 'product_descatalogados' %}">Descatalogados</a></li>
+								<li role="separator" class="divider"></li>
+								<li ><a class="nav-link alert-danger" href="{% url 'categoria_home' %}">Todas Categorías</a></li>
+							</ul>	
+						</li>
 						<!--  
 						<li class="nav-item">
 							<a class="nav-link" href="#">About</a></li>
@@ -75,15 +92,18 @@
 				</div>
 			</div>
 		</nav>
-		<div class="content container float-left mt-3" style="width:400px">		
-			{%if salida%}
-				<div class="alert alert-success alert-dismissible">
-					<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-					<strong>Success!</strong>{{salida|safe}}
-				</div>
-			{% endif %}	
-			<ul id="alert-results" class="list-group list-group-xs"></ul>
-		</div>
+		{%if salida%}
+			<div class="content container float-left mt-3" style="width:400px">		
+				{% for s in salida %}
+					<div class="alert alert-success alert-dismissible">
+						<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+						<strong>{{s.retorno}}!!</strong>{{s.salida|safe}}
+					</div>
+				
+				<ul id="alert-results" class="list-group list-group-xs"></ul>
+				{% endfor%}
+			</div>
+		{% endif %}	
 		<div class="content container float-right" style="width:400px">
 			<ul id="search-results" class="list-group list-group-xs"></ul>
 		</div>

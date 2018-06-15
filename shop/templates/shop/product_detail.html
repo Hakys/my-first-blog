@@ -9,24 +9,15 @@
         h2 {
             font-size: 1.5rem;
         }
-        .alert a{
+        .alert{
+            text-align: center;
             vertical-align: middle;
         }
     </style>
     {% include 'shop/nav_marcas.html' %}
     <h2>{{ product.title }}</h2>
     <div class="row product">     
-        <div class="pb-left-column col-xs-12 col-sm-7 col-md-7">
-            <ul class="nav nav-tabs" role="tablist">
-                {% for image in images %}                    
-                    <li class="nav-item">
-                        <a data-toggle="tab" href="#{{ image.pk }}" class="nav-link{% if image.preferred %} active{% endif %}">
-                            <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
-                                title="{{ image.title }}" width="50">
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>                
+        <div class="pb-left-column col-xs-12 col-sm-7 col-md-7">            
             <div class="tab-content">
                 {% for image in images %}
                     <div id="{{ image.pk }}" class="container tab-pane {% if image.preferred %}active{% else %}fade{% endif %}">
@@ -37,7 +28,7 @@
             </div>
         </div>   
         <div class="pb-right-column col-xs-12 col-sm-5 col-md-5">
-            <h5 class="h5">({{ product.description }})</h5>
+            <h6 class="h6 secondary">{{ product.description }}</h6>
             <div class="content_date">
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">Creado: {{ product.created_date|date:"d/m/Y, H:i" }}</li>
@@ -53,10 +44,11 @@
             <div class="content">
                 <ul class="list-group list-group-flush">
                 <li class="list-group-item">Coste: {{ product.cost_price }} € </li> 
-                <li class="list-group-item">IVA: {{ product.vat }} % </li> 
-                <li class="list-group-item">Precio {{ product.unit_of_measurement}}: {{ product.price }} € </li>
-                <li class="list-group-item">Recomendado: {{ product.recommended_retail_price }} € </li>
-                <li class="list-group-item">Coste Envío {{ product.delivery_desc}}: {{ product.default_shipping_cost }} € </li>
+                <li class="list-group-item">Coste con Dto.: {{ cost_price }} € </li> 
+                <li class="list-group-item">Recomendado: {{ recommended_retail_price }} € </li>
+                <li class="list-group-item">Precio {{ product.unit_of_measurement}}: {{ price }} € </li>
+                <li class="list-group-item">IVA: {{ product.vat }} % </li>
+                <li class="list-group-item">Coste Envío {{ product.delivery_desc}}: {{ product.default_shipping_cost | floatformat:2 }} € </li>
                 </ul>
             </div>
             <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
@@ -64,23 +56,49 @@
                     <div class="alert alert-default ml-1">
                         <a href="{{ product.product_url }}" target="_blank">
                             <img class="img-responsive" src="{% static 'img/logo.png' %}" alt="DreamLove.es" height="30px"></a></div>
-                    <div class="alert alert-info ml-1"><a href="actualizar/">Actualizar</a></div>
+                    <div class="alert alert-info ml-1">
+                        <a href="{% url 'product_actualizar' slug=product.ref %}">Actualizar</a></div>
                 </div>   
             </div> 
         </div>
         <div class="row content btn-toolbar mt-1" role="toolbar" aria-label="Toolbar with button groups">
-            <div class="btn-group btn-group-sm ml-3" role="group" aria-label="First group"> 
-                {% if product.new %}<div class="alert alert-primary ml-1">Nuevo</div>{% endif %} 
-                {% if not product.available or not product.stock %} 
-                    <div class="alert alert-danger ml-1">No Disponible</div>
-                {% else %} 
-                    <div class="alert alert-success ml-1">Disponible: {{ product.stock }}</div> 
-                {% endif %}   
+            <nav class="pb-right-column col-xs-12 col-sm-7 col-md-7">
+                <ul class="nav nav-tabs" role="tablist" style="width:90%">
+                    {% for image in images %}                    
+                        <li class="nav-item">
+                            <a data-toggle="tab" href="#{{ image.pk }}" class="nav-link{% if image.preferred %} active{% endif %}">
+                                <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
+                                    title="{{ image.title }}" width="50">
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            <div class="pb-right-column col-xs-12 col-sm-4 col-md-4">
+                <div class="btn-group btn-group-sm ml-3" role="group" aria-label="First group"> 
+                    {% if product.new %}
+                        {% if not product.available %} 
+                            <div class="alert alert-danger ml-1">Disponible {{ product.release_date|date:"d/m/Y" }}</div>
+                        {% else %}
+                            <div class="alert alert-primary ml-1" style="vertical-align:middle">Nuevo</div>
+                        {% endif %}     
+                    {% else %} 
+                        {% if not product.available %} 
+                            {% if not product.stock %} 
+                                <div class="alert alert-danger ml-1">Agotado</div>
+                            {% else %}
+                                <div class="alert alert-danger ml-1">No Disponible</div>
+                            {% endif %}
+                        {% else %} 
+                            <div class="alert alert-success ml-1">Disponible: {{ product.stock }} {{ product.unit_of_measurement}}</div> 
+                        {% endif %}   
+                    {% endif %}  
+                </div>
+                <div class="btn-group btn-group-sm ml-3" role="group" aria-label="Second group">     
+                    {% if product.sale %}<div class="alert alert-danger ml-1">Rebajado</div>{% endif %}  
+                    {% if product.destocking %}<div class="alert alert-warning ml-1">Descatalogado</div>{% endif %} 
+                </div> 
             </div>
-            <div class="btn-group btn-group-sm ml-3" role="group" aria-label="Second group">     
-                {% if product.sale %}<div class="alert alert-danger ml-1">Rebajado</div>{% endif %}  
-                {% if product.destocking %}<div class="alert alert-warning ml-1">Descatalogado</div>{% endif %} 
-            </div> 
         </div>
         <div class="row ident">
             <div class="pb-center-column col-xs-12">

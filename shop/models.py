@@ -229,6 +229,12 @@ class Imagen(models.Model):
         else: 
             preferred='No'
         return self.ref+' '+self.title+' ('+preferred+')'    
+    
+    def exist(image_url):
+        if urlopen(image_url):
+            return True
+        else:
+            return False
 
 fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
 
@@ -252,8 +258,8 @@ class Externo(models.Model):
         except URLError as e:
             print('We failed to reach a server.')
             print('Reason: '+e.reason)
-        else:        
-            self.file.save(self.name+'.xml', response, False)    
+        else:      
+            self.file.save(self.name+'.xml', response)    
             self.updated_date=timezone.now()
             Product.objects.all().update(updated=datetime.min)
             self.n_productos=0
