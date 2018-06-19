@@ -239,7 +239,7 @@ class Imagen(models.Model):
 fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
 
 class Externo(models.Model): 
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200,unique=True)
     url = models.URLField()
     file = models.FileField(storage=fs,null=True, blank=True)
     created_date = models.DateTimeField('Fecha de Creación',default=timezone.now)  
@@ -259,7 +259,9 @@ class Externo(models.Model):
             print('We failed to reach a server.')
             print('Reason: '+e.reason)
         else:      
-            self.file.save(self.name+'.xml', response)    
+            fecha = datetime.now().strftime("%Y%m%d-%H%M")
+            extension = self.url.split('.')[-1]
+            self.file.save(self.name+'_'+fecha+'.'+extension, response)    
             self.updated_date=timezone.now()
             Product.objects.all().update(updated=datetime.min)
             self.n_productos=0
@@ -272,7 +274,7 @@ class Externo(models.Model):
         return self.file.path
 
     def __str__(self):
-        return self.name+'.xml (P:'+str(self.n_productos)+')(I:'+str(self.n_imagenes)+') ('+str(self.updated_date)+')'
+        return self.file.name+' ('+str(self.updated_date)+')'
 
 class Configuracion(models.Model):
     variable = models.CharField(max_length=200,null=False,unique=True)

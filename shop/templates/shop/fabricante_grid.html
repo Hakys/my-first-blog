@@ -15,8 +15,8 @@
                             {% endif %}
                                 alt="{{ ficha.name }}" title="{{ ficha.name }}"></a>
                         <div class="card-body">
-                            <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
-                            <strong>{{ ficha.name }}</strong></a>
+                            <h6><a href="{% url 'fabricante_detail' slug=ficha.slug %}">
+                            <strong>{{ ficha.name }}</strong></a></h6>
                         </div>
                     </div>
                 </div>

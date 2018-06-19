@@ -1,0 +1,27 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+{% block navbar %}
+    {% include 'shop/navbar.html' %}
+{% endblock %}
+{% block content %}
+    <div class="col-lg-3">
+        <h1 class="my-4 text-center">Origen de Datos</h1>
+        <div class="list-group">
+            <a href="{% url 'init_loaddata' %}" class="list-group-item">Crear Datos Iniciales</a>
+            <a href="{% url 'init_loadfile' %}" class="list-group-item">Crear Ficheros Iniciales</a>
+            <a href="{% url 'externo_cron' %}" class="list-group-item" aria-hidden="true"><span class="glyphicon glyphicon-time"></span>Proceso Automático CRON</a>
+        </div>    
+    </div>
+    <!-- /.col-lg-3 -->
+    
+    <div class="col-lg-9"> 
+        <div class="row">
+            {% include 'shop/externo_list.html' %}
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.col-lg-9 -->    
+{% endblock %}
+{% block footer %}
+    {% include 'shop/footer.html' %}
+{% endblock %}

@@ -17,53 +17,80 @@ from django.http import HttpResponse
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 def init_loaddata(request):
-    salida=0
-    try:    
+    salida=[]   #{'retorno': 0,'salida': "no error"}
+    try:
+        Configuracion.objects.get(variable='dto_mayorista')
+    except:   
         obj = Configuracion(variable='dto_mayorista', valor='10', activo=True)
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
+    try:
+        Configuracion.objects.get(variable='beneficio')
+    except: 
         obj = Configuracion(variable='beneficio', valor='60', activo=True)
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
-        obj = Configuracion(variable='product_limite', valor='500', activo=True)
+    try:
+        Configuracion.objects.get(variable='product_limite')
+    except:   
+        obj = Configuracion(variable='product_limite', valor='250', activo=True)
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
-        obj = Configuracion(variable='imagen_limite', valor='1000', activo=True)
+    try:
+        Configuracion.objects.get(variable='imagen_limite')
+    except: 
+        obj = Configuracion(variable='imagen_limite', valor='300', activo=True)
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
-        obj = Configuracion(variable='fabricante_limite', valor='500', activo=True)
+    try:
+        Configuracion.objects.get(variable='fabricante_limite')
+    except:  
+        obj = Configuracion(variable='fabricante_limite', valor='250', activo=True)
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
+    try:
+        Configuracion.objects.get(variable='prod_page')
+    except:   
         obj = Configuracion(variable='prod_page', valor='24', activo=True)
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
+    try:
+        Configuracion.objects.get(variable='prod_home')
+    except:   
         obj = Configuracion(variable='prod_home', valor='24', activo=True)
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
+    try:
+        Configuracion.objects.get(variable='run_cron')
+    except:   
         obj = Configuracion(variable='run_cron',valor='',activo=True)    
         obj.save()
-    except IntegrityError as e:
-        print(obj, e)
-    try:    
+    try:
+        Fabricante.objects.get(name='DIABLA ROJA')
+    except:   
         obj = Fabricante(name='DIABLA ROJA', slug=slugify('DIABLA ROJA'), parent=None)
         obj.save() 
+    return externo_home(request,salida)
+
+def init_loadfile(request):
+    salida=[]   #{'retorno': 0,'salida': "no error"}
+    try:
+        obj = Externo(name='DreamLove_Productos', url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml')
+        obj.importar()
+        obj.save()
     except IntegrityError as e:
-        print(obj, e)
-    return salida
+        salida.append({'retorno': -1,'salida': e})
+    try:
+        obj = Externo(name='DreamLove_Marcas',url='https://store.dreamlove.es/UserFiles/Marcas__todos_.csv')
+        obj.importar()
+        obj.save()
+    except IntegrityError as e:
+        salida.append({'retorno': -1,'salida': e})
+    try:
+        obj = Externo(name='DreamLove_Categorias', url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/categories_1_50_c5717766e188bb03da6d308655f4d8dd.csv')
+        obj.importar()
+        obj.save()
+    except IntegrityError as e:
+        salida.append({'retorno': -1,'salida': e})
+    return externo_home(request,salida)
+
+def index(request):
+    return render(request,"shop/index.html", {
+        'fabricantes' : Fabricante.objects.filter(parent=None)
+    })
 
 def categoria_home(request):
     return redirect('product_home')
@@ -157,7 +184,7 @@ def product_detail_slug(request, slug):
         })
 
 def product_actualizar(request, slug):
-    externo = get_object_or_404(Externo, name='DreamLoveFile')
+    externo = get_object_or_404(Externo, name='DreamLove_Productos')
     tree=ET.parse(externo.path())
     root=tree.getroot()
     producto = Product.objects.filter(Q(ref=slug)|Q(slug=slug))
@@ -189,12 +216,15 @@ def product_search(request):
                 )[:30]
     return render_to_response('shop/ajax_search.html', {'fichas': fichas})
 
-def externo_list(request):
+def externo_home(request, salida=[]):
     todo = Externo.objects.all().order_by('-updated_date')
-    if len(todo)==1:
-        return externo_detail(request, todo[0].pk)
-    else:
-        return render(request, 'shop/externo_list.html', {'todo':todo})
+    #if todo.count()==1:
+    #    return externo_detail(request, todo[0].pk)
+    #else:
+    return render(request, 'shop/externo_home.html', {
+        'todo':todo,
+        'salida': salida,
+        })
 
 def externo_detail(request, pk):
     externo = get_object_or_404(Externo, pk=pk)
@@ -232,14 +262,6 @@ def externo_edit(request, pk):
         form = ExternoForm(instance=externo)
     return render(request, 'shop/externo_edit.html', {'form': form})
 
-def externo_dreamlove(request):
-    name='DreamLoveFile'
-    ext = Externo(name=name)
-    ext.url='https://store.dreamlove.es/dyndata/exportaciones/csvzip/catalog_1_50_8_0_f2f9102e37db89d71346b15cbc75e8ce_xml_plain.xml'
-    ext.importar()
-    ext.save()
-    return redirect('externo_list')  
-
 def externo_importar(request, pk):
     externo = get_object_or_404(Externo, pk=pk)
     externo.importar()
@@ -254,10 +276,10 @@ def externo_cron(request):
         run_cron=Configuracion.objects.get(variable='run_cron')
     if run_cron.activo:
         try:
-            ext = Externo.objects.get(name='DreamLoveFile')
+            ext = Externo.objects.get(name='DreamLove_Productos')
         except ObjectDoesNotExist as e:
-            externo_dreamlove(request)
-            ext = get_object_or_404(Externo, name='DreamLoveFile')
+            init_loadfile(request)
+            ext = get_object_or_404(Externo, name='DreamLove_Productos')
         tree=ET.parse(ext.path())
         root=tree.getroot() 
         if not procesar_productos(root).get('retorno'): 
@@ -481,7 +503,7 @@ def externo_procesar_imagenes(request, pk):
 
 def procesar_fabricantes(root):
     if root:
-        limite=int(Configuracion.objects.get(variable='fabricante_limit').valor)
+        limite=int(Configuracion.objects.get(variable='fabricante_limite').valor)
         n=0
         nuevo=0
         encontrado=0

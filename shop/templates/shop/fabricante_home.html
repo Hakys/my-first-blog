@@ -1,5 +1,8 @@
 {% extends 'shop/base.html' %}
 {% load static %}
+{% block navbar %}
+    {% include 'shop/navbar.html' %}
+{% endblock %}
 {% block content %}
     <h1>Fabricantes y Marcas</h1>
     {% if fichas %}
@@ -7,4 +10,7 @@
     {% else %}
         <h4>· No Resultados ·</h4>
     {% endif %}
+{% endblock %}
+{% block footer %}
+    {% include 'shop/footer.html' %}
 {% endblock %}

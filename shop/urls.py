@@ -4,9 +4,18 @@ from django.urls import path
 from django.views.generic.base import RedirectView
 
 urlpatterns = [
-	url(r'^$', views.product_home, name='product_home'), 
+    url(r'^$', views.index, name='index'), 
+	url(r'^fab/$', views.fabricante_home, name='fabricante_home'),
+    url(r'^fab/(?P<slug>.+)/$', views.fabricante_detail, name='fabricante_detail'),
 
+
+    url(r'^product_home/$', views.product_home, name='product_home'), 
     url(r'^templateshop/$', views.templateshop, name="templateshop"),
+    
+    url(r'^ext/$', views.externo_home, name='externo_home'),
+    url(r'^ext/init_loaddata/$', views.init_loaddata, name='init_loaddata'),
+    url(r'^ext/init_loadfile/$', views.init_loadfile, name='init_loadfile'),
+
     url(r'^cron/$', views.externo_cron, name='externo_cron'),
     url(r'^test/$', views.product_test, name='product_test'),     
     url(r'^reload/$', views.product_reload, name='product_reload'),
@@ -21,8 +30,6 @@ urlpatterns = [
 
     url(r'^search/$', views.product_search, name='product_search'),
 
-    url(r'^ext/$', views.externo_list, name='externo_list'),
-    url(r'^ext/dreamlove/$', views.externo_dreamlove, name='externo_dreamlove'),
     url(r'^ext/(?P<pk>[0-9]+)/$', views.externo_detail, name='externo_detail'),
     url(r'^ext/(?P<pk>[0-9]+)/edit/$', views.externo_edit, name='externo_edit'),
     url(r'^ext/(?P<pk>[0-9]+)/importar/$', views.externo_importar, name='externo_importar'),
@@ -30,9 +37,6 @@ urlpatterns = [
     url(r'^ext/(?P<pk>[0-9]+)/procesar_imagenes/$', views.externo_procesar_imagenes, name='externo_procesar_imagenes'),
     url(r'^ext/(?P<pk>[0-9]+)/procesar_fabricantes/$', views.externo_procesar_fabricantes, name='externo_procesar_fabricantes'),   
     
-    url(r'^fab/$', views.fabricante_home, name='fabricante_home'),
-    url(r'^fab/(?P<slug>.+)/$', views.fabricante_detail, name='fabricante_detail'),
-
     url(r'^cat/$', views.categoria_home, name='categoria_home'),
     
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
@@ -51,3 +55,5 @@ urlpatterns = [
 #   https://grantorrent.net/
 #   https://zooqle.com
 #   https://www.torrentdownloads.me/
+
+#   https://peliculasyseries.org/

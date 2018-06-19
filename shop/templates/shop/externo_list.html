@@ -1,20 +1,15 @@
-{% extends 'shop/base.html' %}
-{% load static %}
-{% block content %}
-    {{todo.len}}
-    {% if todo %}  
-        <h1>Lista Origen de Datos</h1>    
+<div class="row">  
+    {% if todo %}   
         {% for ficha in todo %}
-            <div class="row">
-                <div class="col-xs-12 col-sm-12 col-md-12">
-                    <h2><a href="{% url 'externo_detail' pk=ficha.pk %}">{{ ficha.name }}</a></h2>
-                    <p class="date">Actualizado: {{ ficha.updated_date|date:"d/m/Y, H:i " }}
-                        <a class="btn btn-link" href="{% url 'externo_importar' pk=ficha.pk %}">Importar </a>
-                    </p>
-                </div> 
-            </div>
+            <div class="col-lg-9">
+                <h2><a href="{% url 'externo_detail' pk=ficha.pk %}">{{ ficha.name }}</a></h2>
+                <p class="date">Actualizado: {{ ficha.updated_date|date:"d/m/Y - H:i " }} 
+                    <a class="btn btn-link" href="{% url 'externo_importar' pk=ficha.pk %}">Importar Fichero</a>
+                </p>
+            </div> 
         {% endfor %}
     {% else %}
-        <h1><a href="{% url 'externo_dreamlove' %}">Iniciar Fichero</a></h1>
+        <h3>No Hay Datos Iniciales</h3>
     {% endif %}
-{% endblock %}
+</div>
+   
