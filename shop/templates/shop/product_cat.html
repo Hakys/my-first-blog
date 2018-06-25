@@ -1,11 +1,31 @@
 {% extends 'shop/base.html' %}
 {% load static %}
+{% block navbar %}
+    {% include 'shop/navbar.html' %}
+{% endblock %}
 {% block content %}
-    {% if fichas_prod %}
-        <h4>{{ title }}</h4>
-        {% include 'shop/product_grid.html' %}
-        <hr>
-    {% else %}
-        <h6>· No hay Resultados ·</h6>
-    {% endif %}
+    <div class="row">
+        <div class="col-lg-9">   
+            {% if fichas_prod %}
+                <div class="row">
+                    {% include 'shop/nav_paginator.html' %}
+                </div>
+                <!-- /.row -->
+                <div class="row p-1 pr-4 d-inline">
+                    {% include 'shop/product_grid.html' %} 
+                </div>
+                <!-- /.row -->
+                <div class="row">
+                    {% include 'shop/nav_paginator.html' %}
+                </div>
+            {% endif %}
+        </div>
+        <!-- /.col-lg-9 -->
+        <div class="col-lg-3 ml-auto">
+        </div> 
+        <!-- /.col-lg-3 -->
+    </div>
+{% endblock %}
+{% block footer %}
+    {% include 'shop/footer.html' %}
 {% endblock %}

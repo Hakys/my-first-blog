@@ -1,5 +1,8 @@
 {% extends 'shop/base.html' %}
 {% load static %}
+{% block navbar %}
+    {% include 'shop/navbar.html' %}
+{% endblock %}
 {% block content %}
     <style>
         .list-group-item {
@@ -17,7 +20,7 @@
     {% include 'shop/nav_marcas.html' %}
     <h2>{{ product.title }}</h2>
     <div class="row product">     
-        <div class="pb-left-column col-xs-12 col-sm-7 col-md-7">            
+        <div class="pb-left-column col-xs-12 col-sm-6 col-md-6">            
             <div class="tab-content">
                 {% for image in images %}
                     <div id="{{ image.pk }}" class="container tab-pane {% if image.preferred %}active{% else %}fade{% endif %}">
@@ -26,78 +29,92 @@
                     </div>
                 {% endfor %}
             </div>
+            <div class="row content btn-toolbar mt-1" role="toolbar" aria-label="Toolbar with button groups">
+                
+                {% if not images.count == 1 %}
+                <nav>
+                    <ul class="nav nav-tabs" role="tablist">
+                        {% for image in images %}                    
+                            <li class="nav-item">
+                                <a data-toggle="tab" href="#{{ image.pk }}" class="nav-link{% if image.preferred %} active{% endif %}">
+                                    <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
+                                        title="{{ image.title }}" width="50">
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
         </div>   
-        <div class="pb-right-column col-xs-12 col-sm-5 col-md-5">
+        <div class="pb-right-column col-xs-12 col-sm-6 col-md-6">
             <h6 class="h6 secondary">{{ product.description }}</h6>
-            <div class="content_date">
+            <div class="card mb-2" style="width: 18rem;">
                 <ul class="list-group list-group-flush">
-                    <li class="list-group-item">Creado: {{ product.created_date|date:"d/m/Y, H:i" }}</li>
+                    <li class="list-group-item">Creado: {{ product.created_date|date:"d/m/Y" }}</li>
                     <li class="list-group-item">Actualizado: {{ product.updated|date:"d/m/Y, H:i" }}</li>
-                    <li class="list-group-item">Lanzamiento: {{ product.release_date|date:"d/m/Y, H:i" }}</li>
+                    <li class="list-group-item">Lanzamiento: {{ product.release_date|date:"d/m/Y" }}</li>
                 </ul>
-            </div>
-            <div class="content">
-                  
-                <a href="{% url 'product_detail_slug' slug=product.ref %}">Ref: {{ product.ref }}</a><br>
-                <!--<a href="{% url 'product_detail_slug' slug=product.slug %}">{{ product.slug }}</a>-->
-            </div>     
-            <div class="content">
+            </div>    
+            <div class="card mb-2" style="width: 18rem;">
                 <ul class="list-group list-group-flush">
-                <li class="list-group-item">Coste: {{ product.cost_price }} € </li> 
-                <li class="list-group-item">Coste con Dto.: {{ cost_price }} € </li> 
-                <li class="list-group-item">Recomendado: {{ recommended_retail_price }} € </li>
-                <li class="list-group-item">Precio {{ product.unit_of_measurement}}: {{ price }} € </li>
-                <li class="list-group-item">IVA: {{ product.vat }} % </li>
-                <li class="list-group-item">Coste Envío {{ product.delivery_desc}}: {{ product.default_shipping_cost | floatformat:2 }} € </li>
+                    <li class="list-group-item">Coste: {{ product.cost_price | floatformat:2 }} € </li>               
+                    <li class="list-group-item">Gastos de Envío ({{ product.delivery_desc}}) (+IVA): {{ product.default_shipping_cost | floatformat:2 }} € </li> 
+                    <li class="list-group-item">Beneficio ({{ porc_benef|floatformat:2  }}%): {{ beneficio | floatformat:2 }} € </li>
+                    <li class="list-group-item">PVP (+IVA): {{ product.pvp | floatformat:2 }} € </li>
+                    <li class="list-group-item">Precio (+IVA): {{ product.price | floatformat:2 }} € </li>
+                    <li class="list-group-item">Recomendado (+IVA): {{ product.recommended_retail_price | floatformat:2 }} € </li>
+                    <li class="list-group-item">Stock: {{ product.stock }} {{ product.unit_of_measurement}} </li> 
                 </ul>
             </div>
-            <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
-                <div class="btn-group btn-group-xs" role="group" aria-label="Third group">
-                    <div class="alert alert-default ml-1">
-                        <a href="{{ product.product_url }}" target="_blank">
-                            <img class="img-responsive" src="{% static 'img/logo.png' %}" alt="DreamLove.es" height="30px"></a></div>
-                    <div class="alert alert-info ml-1">
-                        <a href="{% url 'product_actualizar' slug=product.ref %}">Actualizar</a></div>
-                </div>   
-            </div> 
-        </div>
-        <div class="row content btn-toolbar mt-1" role="toolbar" aria-label="Toolbar with button groups">
-            <nav class="pb-right-column col-xs-12 col-sm-7 col-md-7">
-                <ul class="nav nav-tabs" role="tablist" style="width:90%">
-                    {% for image in images %}                    
-                        <li class="nav-item">
-                            <a data-toggle="tab" href="#{{ image.pk }}" class="nav-link{% if image.preferred %} active{% endif %}">
-                                <img class="replace-2x img-responsive" src="{{ image.src }}" alt="{{ image.title }}"
-                                    title="{{ image.title }}" width="50">
-                            </a>
-                        </li>
-                    {% endfor %}
+            <div class="card mb-2" style="width: 18rem;">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">hoy: {{ hoy }}</li>
+                    <li class="list-group-item">min: {{ date_min }}</li>
+                    <li class="list-group-item">available {{ product.available }}</li>
+                    <li class="list-group-item">destocking {{ product.destocking }}</li>
+                    <li class="list-group-item">sale {{ product.sale }}</li>
+                    <li class="list-group-item">new {{ product.new }}</li>
+                    <li class="list-group-item">stock {{ product.stock }}</li>
                 </ul>
-            </nav>
-            <div class="pb-right-column col-xs-12 col-sm-4 col-md-4">
-                <div class="btn-group btn-group-sm ml-3" role="group" aria-label="First group"> 
-                    {% if product.new %}
-                        {% if not product.available %} 
-                            <div class="alert alert-danger ml-1">Disponible {{ product.release_date|date:"d/m/Y" }}</div>
-                        {% else %}
-                            <div class="alert alert-primary ml-1" style="vertical-align:middle">Nuevo</div>
-                        {% endif %}     
-                    {% else %} 
-                        {% if not product.available %} 
-                            {% if not product.stock %} 
-                                <div class="alert alert-danger ml-1">Agotado</div>
-                            {% else %}
-                                <div class="alert alert-danger ml-1">No Disponible</div>
+            </div>
+            <div class="card-body">
+                <a class="alert-link" href="{% url 'product_actualizar' slug=product.ref %}">Actualizar</a>
+                <a class="alert-link" href="{% url 'product_borrar' slug=product.ref %}" 
+                    onclick="return confirm('¡¡Vas a BORRAR el Producto!!')">Borrar</a>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="btn-group btn-group-sm  ml-3" role="group" aria-label="First group">                         
+                        <a class="m-2" href="{{ product.product_url }}" target="_blank" >
+                            <img class="img-responsive" src="{% static 'img/logo.png' %}" alt="DreamLove.es" height="32px"></a>                        
+                        {% if product.new %}
+                            <div class="alert alert-success ml-1 pl-2 pr-2" role="alert" style="vertical-align:middle" >Nuevo</div>{% endif %}
+                        {% if product.release_date >= hoy %}
+                            {% if product.new %}
+                                <div class="alert alert-primary ml-1 pl-2 pr-2" role="alert">Lanzamiento {{ product.release_date|date:"d/m/Y" }}</div>
+                            {% else %}    
+                                <div class="alert alert-warning ml-1 pl-2 pr-2" role="alert">Reposición {{ product.release_date|date:"d/m/Y" }}</div>
                             {% endif %}
-                        {% else %} 
-                            <div class="alert alert-success ml-1">Disponible: {{ product.stock }} {{ product.unit_of_measurement}}</div> 
-                        {% endif %}   
-                    {% endif %}  
+                        {% else %}
+                            {% if not product.stock %}
+                                <div class="alert alert-danger ml-1 pl-2 pr-2" role="alert" style="vertical-align:middle">Agotado</div>
+                                {% if product.updated == date_min %}
+                                    <div class="alert alert-secondary" role="alert" style="vertical-align:middle">Sin Reposición</div>{% endif %}
+                            {% else %}
+                                {% if product.available %}
+                                    <div class="alert alert-success ml-1 pl-2 pr-2" role="alert">Disponible {{ product.stock }} {{ product.unit_of_measurement}}</div>
+                                {% else %}
+                                    <div class="alert alert-warning ml-1 pl-2 pr-2" role="alert">Reposición {{ product.release_date|date:"d/m/Y" }}</div>
+                                {% endif %}                             
+                            {% endif %}
+                        {% endif %}
+                        {% if product.sale %}
+                            <div class="alert alert-danger ml-1 pl-2 pr-2" role="alert" style="vertical-align:middle" >Rebajado</div>{% endif %}
+                        {% if product.destocking %}
+                            <div class="alert alert-dark ml-1 pl-2 pr-2" role="alert" style="vertical-align:middle" >Descatalogado</div>{% endif %}
+                    </div>
                 </div>
-                <div class="btn-group btn-group-sm ml-3" role="group" aria-label="Second group">     
-                    {% if product.sale %}<div class="alert alert-danger ml-1">Rebajado</div>{% endif %}  
-                    {% if product.destocking %}<div class="alert alert-warning ml-1">Descatalogado</div>{% endif %} 
-                </div> 
             </div>
         </div>
         <div class="row ident">
@@ -108,4 +125,7 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block footer %}
+    {% include 'shop/footer.html' %}
 {% endblock %}

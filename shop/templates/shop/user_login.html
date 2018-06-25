@@ -1,0 +1,32 @@
+{% extends 'shop/base.html' %}
+{% load staticfiles %}
+{% block title_block %}
+    Register
+{% endblock %}
+{% block navbar %}
+    {% include 'shop/navbar.html' %}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-lg-3">
+            <h2 class="h2">Acceso a Usuarios</h2>
+            <a href="{% url 'register' %}">Registrarse</a>
+        </div> 
+        <!-- /.col-lg-3 -->
+        <div class="col-lg-9 ml-auto pt-3 pb-4">   
+            <form id="login_form" method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                Usuario: <input type="text" name="username" value="" size="50" />
+                <br />
+                Contraseña: <input type="password" name="password" value="" size="50" />
+                <br />
+                <input type="submit" value="Acceder" />
+            </form>
+        </div>
+        <!-- /.col-lg-9 -->
+    </div>
+{% endblock %}
+{% block footer %}
+    {% include 'shop/footer.html' %}
+{% endblock %}
+

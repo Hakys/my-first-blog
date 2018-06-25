@@ -1,5 +1,8 @@
 {% extends 'shop/base.html' %}
 {% load static %}
+{% block navbar %}
+    {% include 'shop/navbar.html' %}
+{% endblock %}
 {% block content %}
     <style>
         .breadcrumb {
@@ -8,95 +11,75 @@
             vertical-align: middle;
             }
     </style>
-    <h3 class="mb-2">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'fabricante_home' %}">MARCAS </a></li>
-            {% if breadcrumbs %}
-                {% for slug,name in breadcrumbs %}
-                    <li class="breadcrumb-item"><a href="{% url 'fabricante_detail' slug=slug %}">{{ name | upper }}</a></li>
-                {% endfor %}
-            {% endif %}        
-            <li class="breadcrumb-item active">
-                {% if ficha.image.url %}
-                    <img  src="{{ ficha.image.url }}" width="45px" height="45px">
-                {% else %}
-                    <img src="{% static 'img/no-foto.jpg' %}" alt="Sin Foto" width="45px" height="45px">
-                {% endif %}
-                    {{ficha.name}}
-            </li>
-        </ol>
-    </h3>
-    <hr>
-    {% if sub_fabricantes %}
-        <h4>Marcas Asociadas</h4>
-        <div class="sub_fabricante row">
-            <div class="center_column col-xs-12" >
-                <div class="row">
-                    {% for ficha in sub_fabricantes %}
-                        <div class="col-lg-2 col-md-3 mb-1 pl-1 pr-1">
-                            <div class="card">
-                                <div class="card-body">
-                                    <a href="{{ ficha.slug }}">
-                                    <strong>{{ ficha.name }}</strong></a>
-                                </div>
-                                <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
-                                    <img class="card-img-top" 
-                                    {% if ficha.image.url %}
-                                        src="{{ ficha.image.url }}" 
-                                    {% else %}
-                                        src="{% static 'img/no-foto.jpg' %}"
-                                    {% endif %}
-                                        alt="{{ ficha.name }}" title="{{ ficha.name }}"></a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div> 
-        <hr>
-    {% endif %}
-    <nav class="row" aria-label="Page navigation">
-        <h4 class="flaot_left">Productos</h4>
-        <div class="pagination float-right ml-5">
-            <ul class="pagination">
-            <span class="step-links">
-                {% if fichas_prod.has_previous %}
-                    <a href="?page=1">&laquo;&laquo; Primera</a>
-                    <a href="?page={{ fichas_prod.previous_page_number }}">&laquo; Anterior</a>
-                {% endif %}
-                <span class="current">
-                    Página {{ fichas_prod.number }} de {{ fichas_prod.paginator.num_pages }}.
-                </span>
-                {% if fichas_prod.has_next %}
-                    <a href="?page={{ fichas_prod.next_page_number }}">Siguiente &raquo;</a>
-                    <a href="?page={{ fichas_prod.paginator.num_pages }}">Última &raquo;&raquo;</a>
-                {% endif %}
-            </span>
-            </ul>
+    <div class="row">
+        <div class="col-lg-12">
+            <h3 class="mb-2">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'fabricante_home' %}">MARCAS </a></li>
+                    {% if breadcrumbs %}
+                        {% for slug,name in breadcrumbs %}
+                            <li class="breadcrumb-item"><a href="{% url 'fabricante_detail' slug=slug %}">{{ name | upper }}</a></li>
+                        {% endfor %}
+                    {% endif %}        
+                    <li class="breadcrumb-item active">
+                        {% if ficha.image.url %}
+                            <img  src="{{ ficha.image.url }}" width="45px" height="45px">
+                        {% else %}
+                            <img src="{% static 'img/no-foto.jpg' %}" alt="Sin Foto" width="45px" height="45px">
+                        {% endif %}
+                            {{ficha.name}}
+                    </li>
+                </ol>
+            </h3>
         </div>
-        <nav aria-label="Page navigation">
-            <ul class="pagination">
-                <li>
-                <a href="#" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-                </li>
-                <li><a href="#">1</a></li>
-                <li><a href="#">2</a></li>
-                <li><a href="#">3</a></li>
-                <li><a href="#">4</a></li>
-                <li><a href="#">5</a></li>
-                <li>
-                <a href="#" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-                </li>
-            </ul>
-        </nav>
+    </div>
+    <div class="row">
+        <div class="col-lg-9">   
+            {% if fichas_prod %}
+                <div class="row">
+                    {% include 'shop/nav_paginator.html' %}
+                </div>
+                <!-- /.row -->
+                <div class="row p-1 pr-4 d-inline">
+                    {% include 'shop/product_grid.html' %} 
+                </div>
+                <!-- /.row -->
+            {% endif %}
+        </div>
+        <!-- /.col-lg-9 -->
+        <div class="col-lg-3 ml-auto">
+            {% if sub_fabricantes %}
+                <div class="row">
+                    <h4>Marcas Asociadas</h4>
+                    <div class="left_column col-xs-6" >
+                        <div class="row m-0">
+                            {% for ficha in sub_fabricantes %}
+                                <div class="col-lg-6 mb-1 p-1">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <a href="{{ ficha.slug }}">
+                                            <strong>{{ ficha.name }}</strong></a>
+                                        </div>
+                                        <a href="{{ ficha.slug }}">
+                                            <img class="card-img-top" 
+                                            {% if ficha.image.url %}
+                                                src="{{ ficha.image.url }}" 
+                                            {% else %}
+                                                src="{% static 'img/no-foto.jpg' %}"
+                                            {% endif %}
+                                                alt="{{ ficha.name }}" title="{{ ficha.name }}"></a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div> 
+            {% endif %}
+        </div> 
+        <!-- /.col-lg-3 -->
+    </div>
     
-        <div class="float-right ml-5">{{ n_prod }} {{fichas_prod.count }} Productos</div>
-    </nav>
-    {% if fichas_prod %}
-        {% include 'shop/product_grid.html' %}
-    {% endif %}
+{% endblock %}
+{% block footer %}
+    {% include 'shop/footer.html' %}
 {% endblock %}

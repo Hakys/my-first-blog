@@ -1,37 +1,51 @@
 {% load static %}
-<div class="product row mt-2">
-    <div class="center_column col-xs-12" >
-        <div class="row">
-            {% for ficha in fichas_prod %}
-                <div class="col-lg-3 col-md-4 mb-3 pl-1 pr-1">
-                    <div class="card">
-                        <a href="{% url 'product_detail' pk=ficha.product_id.pk %}">
-                            <img class="card-img-top"  src="{{ ficha.src }}" alt="{{ ficha.title }}" title="{{ ficha.title }}"></a>
-                        <div class="card-body">
-                            <h4 class="card-title">
-                                <a href="{% url 'product_detail' pk=ficha.product_id.pk %}">{{ ficha.title | truncatechars:50 }}</a>
-                            </h4>
-                            <h5 class="text-right">{{ ficha.product_id.price }} €</h5>
-                            <p class="manufacturer mb-1"> 
-                                <a href="/fab/{{ ficha.product_id.fabricante.parent.slug }}/{{ ficha.product_id.fabricante.slug }}/">
-                                    <img class="card-img-fab" height="30px"
-                                        {% if ficha.image.url %}
-                                            src="{{ ficha.product_id.fabricante.image.url }}" 
-                                        {% else %}
-                                            src="{% static 'img/no-foto.jpg' %}"
-                                        {% endif %}
-                                        alt="{{ ficha.product_id.fabricante.name }}" title="{{ ficha.product_id.fabricante.name }}>"
-                                    <strong>{{ ficha.product_id.fabricante.name }}</strong> 
-                                </a> 
-                            </p>  
-                        </div>
-                        <!--<div class="card-footer">
-                            <small class="text-muted">&#9733; &#9733; &#9733; &#9733; &#9734;</small>
-                        </div>-->
+<div class="col-lg-12">
+    <div class="row">
+        {% for ficha in fichas_prod %}
+            <div class="col-lg-3 mb-2 p-1">
+                <div class="card h-100">
+                    <a href="{% url 'product_detail' pk=ficha.product_id.pk %}">
+                        <img class="card-img-top" src="{{ ficha.src }}" alt="{{ ficha.title }}" title="{{ ficha.title }}"></a>
+                    <div class="card-body">
+                        <h4 class="card-title ">
+                            <a href="{% url 'product_detail' pk=ficha.product_id.pk %}">{{ ficha.title | truncatechars:50 }}</a></h4>
+                        <p class="card-text float-left mb-2"> 
+                            <a href="/fab/{{ ficha.product_id.fabricante.parent.slug }}/{{ ficha.product_id.fabricante.slug }}/">
+                                <img class="card-img-fab" height="30px"
+                                    {% if ficha.image.url %}
+                                        src="{{ ficha.product_id.fabricante.image.url }}" 
+                                    {% else %}
+                                        src="{% static 'img/no-foto.jpg' %}"
+                                    {% endif %}
+                                    alt="{{ ficha.product_id.fabricante.name }}" title="{{ ficha.product_id.fabricante.name }}>"
+                                <strong>{{ ficha.product_id.fabricante.name }}</strong> 
+                            </a> 
+                        </p>
+                        <h5 class="text-right mb-0 float-right">{{ ficha.product_id.price }} €</h5>
+                    </div>
+                    <div class="card-footer p-1">
+
+                        {% if ficha.product_id.release_date >= hoy %}
+                            {% if ficha.product_id.new %} Nuevo
+                                Próxim. {{ ficha.product_id.release_date|date:"d/m/Y" }} 
+                            {% else %}    
+                                Reposic. {{ ficha.product_id.release_date|date:"d/m/Y" }} 
+                            {% endif %}
+                        {% endif %}
+                        {% if not ficha.product_id.stock %}
+                            {{ ficha.product_id.release_date|date:"d/m/Y" }}
+                        {% else %}
+                            {{ ficha.product_id.stock }} {{ ficha.product_id.unit_of_measurement}}    
+                        {% endif %}
+                        {% if ficha.product_id.sale %} Rebajado {% endif %}
+                        {% if ficha.product_id.destocking %} Descatalogado {% endif %}
+                        <!--<small class="text-muted">&#9733; &#9733; &#9733; &#9733; &#9734;</small>-->
                     </div>
                 </div>
-            {% endfor %}
-        </div>
+            </div>
+        {% endfor %}
     </div>
+    <!-- /.row -->
 </div>
-
+<!-- /.col-lg-9 --> <!--
+              

@@ -1,0 +1,40 @@
+{% extends 'shop/base.html' %}
+{% load staticfiles %}
+{% block title_block %}
+    Register
+{% endblock %}
+{% block navbar %}
+    {% include 'shop/navbar.html' %}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-lg-3">
+            <h2 class="h2">Registro Usuarios</h2>
+        </div> 
+        <!-- /.col-lg-3 -->
+        <div class="col-lg-9 ml-auto pt-3 pb-4">   
+            {% if not registered %}       
+                <form class="m-5" id="user_form" method="post" action="{% url 'register' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Display each form -->
+                    {{ user_form.as_p }}
+                    {{ profile_form.as_p }}
+
+                    <!-- Provide a button to click to submit the form. -->
+                    <input type="submit" name="submit" value="Registrarse" />
+                </form> 
+            {% else %}    
+                <h3 class="m-5 p-5 text-center" >
+                    <strong>Gracias por registrarte!</strong><br/>
+                    <a href="{% url 'login' %}">Acceder Zona Privada</a><br />
+                    <a href="{% url 'index' %}">Volver al Incio.</a><br />
+                </h3>
+            {% endif %}
+        </div>
+        <!-- /.col-lg-9 -->
+    </div>
+{% endblock %}
+{% block footer %}
+    {% include 'shop/footer.html' %}
+{% endblock %}

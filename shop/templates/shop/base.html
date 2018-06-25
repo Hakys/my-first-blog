@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="Catálogo Web Diabla Roja">
-    <meta name="author" content="byHakys">
+    <meta name="author" content="by Hakys">
 	<link rel="shortcut icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}/">
 	<link rel="icon" type="image/vnd.microsoft.icon" href="{% static 'img/favicon.ico' %}">
     <title>Diabla Roja Shop - Catálogo Web</title>
@@ -24,22 +24,17 @@
 	</nav>
 
 	<!-- Windows Message-->
-	<div class="container w-30 float-left">
-			{%if salida%}
-			<div class="row">		
-				{% for s in salida %}
-					<div class="alert alert-success alert-dismissible">
-						<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-						<strong>{{s.retorno}}!!</strong>{{s.salida|safe}}
-					</div>
-				{% endfor%}
-			</div>
-		{% endif %}	
-	</div>
+	{% for s in salida %}
+		<div class="alert alert-success alert-dismissible w-30 float-right mr-4" style="clear:left; clear:right; ">
+			<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+			<strong>{{s.retorno}} </strong>{{s.salida|safe}}
+		</div>
+	{% empty %}
+	{% endfor%}
 	
 	<!-- Page Content -->
     <div class="container">
-		<div class="row">
+		<div class="row justify-content-between">
         	{% block content %}
 			{% endblock %}
 		</div>

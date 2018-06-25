@@ -10,6 +10,9 @@ from django.core.files.storage import FileSystemStorage
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError 
 from django.conf import settings
+from decimal import *
+
+from django.contrib.auth.models import User
 
 fs_img = FileSystemStorage(location=settings.MEDIA_ROOT)
 
@@ -130,28 +133,34 @@ class Product(models.Model):
     slug = models.SlugField(max_length=200,unique=True,null=False)
     portada = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
     ref = models.CharField(max_length=20,unique=True)
+    title = models.CharField(max_length=200) 
+    description = models.TextField(blank=True, null=True)
+    html_description = models.TextField(blank=True, null=True)		
+    product_url = models.URLField(blank=True)
+
     updated = models.DateTimeField('Última Actualización',default=timezone.now)
     created_date = models.DateTimeField(default=timezone.now)
+    release_date = models.DateTimeField('Lanzamiento',blank=True, null=True)
+
     available = models.BooleanField('Disponible',default=True)
-    title = models.CharField(max_length=200) 
+    destocking = models.BooleanField('Liquidación',default=False)    
+    sale = models.BooleanField('Rebajado',default=False)
+    new = models.BooleanField('Nuevo',default=True)
+
     cost_price = models.DecimalField(max_digits=8,decimal_places=2)
     price = models.DecimalField(max_digits=8,decimal_places=2)
-    product_url = models.URLField(blank=True)
     recommended_retail_price = models.DecimalField(max_digits=8,decimal_places=2,default=0)
     default_shipping_cost = models.DecimalField(decimal_places=2,max_digits=8,default=0)
     delivery_desc = models.CharField(max_length=20,blank=True)
     vat = models.DecimalField('IVA',decimal_places=2,max_digits=4,default=21.00)
     unit_of_measurement = models.CharField(max_length=20,blank=True)
-    description = models.TextField(blank=True, null=True)
-    html_description = models.TextField(blank=True, null=True)		
-    release_date = models.DateTimeField('Lanzamiento',blank=True, null=True)
+    pvp = models.DecimalField(max_digits=8,decimal_places=2,default=0)
+
     fabricante = models.ForeignKey(Fabricante, on_delete=models.CASCADE, null=True)
-    
-    destocking = models.BooleanField('Liquidación',default=False)    
-    sale = models.BooleanField('Rebajado',default=False)
-    new = models.BooleanField('Nuevo',default=True)
+
     #<stock><location path="General">50</location></stock>
     stock = models.IntegerField(default=0)
+
     #category = models.ForeignKey('Categoria', null=True, blank=True, on_delete=None)
     #categorias = models.ManyToManyField(Categoria)
     #prepaid_reservation = models.BooleanField('Pre-Pedido',default=False)
@@ -210,7 +219,23 @@ class Product(models.Model):
 
         for i in range(len(breadcrumb)-1):
             breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
-        return breadcrumb[-1:0:-1]      
+        return breadcrumb[-1:0:-1]    
+
+    def get_pvp(self):
+        beneficio = Configuracion.objects.get(variable='beneficio').get_valor_dec()
+        rec_equivalencia = Configuracion.objects.get(variable='rec_equivalencia').get_valor_dec()
+        if not self.vat:
+            iva = Configuracion.objects.get(variable='iva').get_valor_dec()
+        else:
+            iva = Decimal(self.vat)
+        iva=iva/100
+        req=Decimal(rec_equivalencia/1000)
+        porc_benef=Decimal(beneficio/100)
+        cost_price = Decimal(self.cost_price)
+        coste_total=cost_price+cost_price*iva+cost_price*req
+        self.pvp = round(coste_total/(1-porc_benef),2)
+        #self.save()
+        return self.pvp
 
 #fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')  
 class Imagen(models.Model):
@@ -286,9 +311,36 @@ class Configuracion(models.Model):
             activo='Si' 
         else: 
             activo='No'
-
+        valor=''
         if self.valor: 
-            valor=self.valor
-        else: 
-            valor='- '    
-        return self.variable+': '+valor+'('+activo+')'
+            valor=': '+self.valor   
+        return self.variable+valor+' ('+activo+')'
+    
+    def get_valor_int(self):
+        if self.activo:
+            return int(self.valor)
+        else:
+            return False
+    
+    def get_valor(self):
+        if self.activo:
+            return str(self.valor)
+        else:
+            return False
+    
+    def get_valor_dec(self):
+        if self.activo:
+            return Decimal(self.valor)
+        else:
+            return False
+
+class UserProfile(models.Model):
+    # This line is required. Links UserProfile to a User model instance.
+    user = models.OneToOneField(User,on_delete=models.CASCADE,default=None)
+    
+    # The additional attributes we wish to include.
+    website = models.URLField(blank=True)
+    picture = models.ImageField(upload_to='profile_images', blank=True)
+
+    def __str__(self):
+        return self.user.username

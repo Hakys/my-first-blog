@@ -5,9 +5,9 @@
         <a href="#" class="list-group-item">Category 2</a>
         <a href="#" class="list-group-item">Category 3</a>
     </div>
-    <div class="form-group mt-2">
+    <div class="form-group pt-2">
         <form>{% csrf_token %}
-            <label for="sel_marcas"><h5 class="h5"><a href="/fab/">Marcas y Fabricantes</a></h5></label>
+            <label for="sel_marcas"><h5><a href="{% url 'fabricante_home' %}">Marcas y Fabricantes</a></h5></label>
             {% if fabricantes %}
                 <select class="form-control" id="sel_marcas" name="sel_marcas">
                     <option value="" selected>Marcas y Fabricantes</option>                    

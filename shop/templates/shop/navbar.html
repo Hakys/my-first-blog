@@ -1,3 +1,8 @@
+<style>
+    .dropdown-menu {
+        left: auto;
+    }
+</style>
 <a class="navbar-brand" href="/">Diabla Roja Shop</a>
 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
@@ -5,14 +10,52 @@
 <div class="collapse navbar-collapse" id="navbarResponsive">
     <ul class="navbar-nav ml-auto">
         <li class="nav-item active"><a class="nav-link" href="/">Home<span class="sr-only">(current)</span></a></li>
-        <li class="nav-item"><a class="nav-link" href="/admin/" target="_blank">Admin</a></li>     
-        <li class="nav-item"><a class="nav-link" href="{% url 'externo_home' %}">Externo</a></li>     
+        <li class="nav-item">
+            <a id="btnGroupDrop1" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Productos</a>
+            <div class="dropdown-menu" aria-labelledby="btnGroupDrop1">
+                <a class="dropdown-item" href="{% url 'product_home' %}">Todos Productos</a>
+                <a class="dropdown-item" href="{% url 'product_lanzamientos' %}">Próximo Lanzamiento</a>
+                <a class="dropdown-item" href="{% url 'product_nuevos' %}">Nuevos</a>
+                <a class="dropdown-item" href="{% url 'product_rebajados' %}">Rebajados</a>
+                <a class="dropdown-item" href="{% url 'product_descatalogados' %}">Descatalogados</a>
+            </div>
+        </li>
         <li class="nav-item"><a class="nav-link" href="{% url 'fabricante_home' %}">Marcas</a></li>
-        
-        <li class="nav-item"><a class="nav-link" href="templateshop/">TemplateShop</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'product_test' %}">Test</a></li> 
-        <li class="nav-item"><a class="nav-link" href="#">About</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Services</a></li>
-        <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+        {% if user.is_authenticated %}            
+            <li class="nav-item"><a class="nav-link" href="{% url 'admin' %}" target="_blank">Admin</a></li>     
+            <li class="nav-item"><a class="nav-link" href="{% url 'externo_home' %}">Externo</a></li> 
+            <li class="nav-item">
+                <a id="btnGroupDrop2" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Hola, {{ user.username }}</a>
+                <div class="dropdown-menu" aria-labelledby="btnGroupDrop2">
+                    <a class="dropdown-item" href="#">Mis Datos</a>
+                    <a class="dropdown-item" href="#">Mis Pedidos</a>
+                    <a class="dropdown-item" href="{% url 'user_password_change' %}">Cambiar Contraseña</a>
+                    <a class="dropdown-item" href="{% url 'user_password_reset' %}">Resetear Contraseña</a>
+                    
+                    <a class="dropdown-item" href="{% url 'user_logout' %}">Cerrar Sesión</a>
+                    <p class="dropdown-item"> Nº Visitas: {{ visits }}</p>
+                </div>
+            </li>
+        {% else %}
+            <li class="nav-item">
+                <a id="btnGroupDrop3" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Zona Privada</a>
+                <div class="dropdown-menu" aria-labelledby="btnGroupDrop3">
+                    <a class="dropdown-item" href="{% url 'user_register' %}">Registrarse</a>
+                    <a class="dropdown-item" href="{% url 'user_register_complete' %}">Registro Completo</a>
+                    <a class="dropdown-item" href="{% url 'user_login' %}">Acceder</a>
+                </div>
+            </li>
+        {% endif %}
+        <li class="nav-item">
+            <a id="btnGroupDrop9" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Otros</a>
+            <div class="dropdown-menu" aria-labelledby="btnGroupDrop9">
+                <a class="dropdown-item" href="restricted/">Restricted</a>
+                <a class="dropdown-item" href="templateshop/">TemplateShop</a>
+                <a class="dropdown-item" href="{% url 'test' %}">Test</a>
+                <a class="dropdown-item" href="#">About</a>
+                <a class="dropdown-item" href="#">Services</a>
+                <a class="dropdown-item" href="#">Contact</a>
+            </div>
+        </li>
     </ul>
 </div>

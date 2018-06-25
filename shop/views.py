@@ -1,10 +1,11 @@
 from .models import *
-from .forms import ExternoForm
+from .forms import *
 from django.shortcuts import render, get_object_or_404, redirect, render_to_response
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.dateparse import parse_datetime
 from datetime import datetime
+from time import time
 from django.db import models, IntegrityError
 from django.db.models import Q
 import xml.etree.ElementTree as ET
@@ -13,57 +14,12 @@ from django.core.files import File
 from django.core.files.storage import Storage, FileSystemStorage
 from urllib.request import Request, urlopen, URLError, HTTPError  
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse
+from django.http import *
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-
-def init_loaddata(request):
-    salida=[]   #{'retorno': 0,'salida': "no error"}
-    try:
-        Configuracion.objects.get(variable='dto_mayorista')
-    except:   
-        obj = Configuracion(variable='dto_mayorista', valor='10', activo=True)
-        obj.save()
-    try:
-        Configuracion.objects.get(variable='beneficio')
-    except: 
-        obj = Configuracion(variable='beneficio', valor='60', activo=True)
-        obj.save()
-    try:
-        Configuracion.objects.get(variable='product_limite')
-    except:   
-        obj = Configuracion(variable='product_limite', valor='250', activo=True)
-        obj.save()
-    try:
-        Configuracion.objects.get(variable='imagen_limite')
-    except: 
-        obj = Configuracion(variable='imagen_limite', valor='300', activo=True)
-        obj.save()
-    try:
-        Configuracion.objects.get(variable='fabricante_limite')
-    except:  
-        obj = Configuracion(variable='fabricante_limite', valor='250', activo=True)
-        obj.save()
-    try:
-        Configuracion.objects.get(variable='prod_page')
-    except:   
-        obj = Configuracion(variable='prod_page', valor='24', activo=True)
-        obj.save()
-    try:
-        Configuracion.objects.get(variable='prod_home')
-    except:   
-        obj = Configuracion(variable='prod_home', valor='24', activo=True)
-        obj.save()
-    try:
-        Configuracion.objects.get(variable='run_cron')
-    except:   
-        obj = Configuracion(variable='run_cron',valor='',activo=True)    
-        obj.save()
-    try:
-        Fabricante.objects.get(name='DIABLA ROJA')
-    except:   
-        obj = Fabricante(name='DIABLA ROJA', slug=slugify('DIABLA ROJA'), parent=None)
-        obj.save() 
-    return externo_home(request,salida)
+from decimal import *
+from django.contrib.auth import *
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 
 def init_loadfile(request):
     salida=[]   #{'retorno': 0,'salida': "no error"}
@@ -88,12 +44,20 @@ def init_loadfile(request):
     return externo_home(request,salida)
 
 def index(request):
-    return render(request,"shop/index.html", {
-        'fabricantes' : Fabricante.objects.filter(parent=None)
+    # Call function to handle the cookies
+    visitor_cookie_handler(request)
+    
+    return render(request,"shop/index.html", { 
+        'visits': request.session['visits'],   
+        'fabricantes' : Fabricante.objects.filter(parent=None),
     })
+
+''' #####   CATEGORÍAS   ##### '''
 
 def categoria_home(request):
     return redirect('product_home')
+
+''' #####   PRODUCTOS   ##### '''
 
 def product_list(request):
     todo = Imagen.objects.filter(preferred=True).order_by('-product_id__release_date')    
@@ -104,84 +68,118 @@ def product_list(request):
     todo_paginado = paginator.get_page(page)
     return render(request, 'shop/product_list.html', {'todo':todo_paginado})
 
-def product_home(request):
-    fichas_prod = Imagen.objects.filter(preferred=True,product_id__new=True).order_by('-product_id__release_date')[:24]  
-    return render(request, 'shop/product_cat.html',{
-        'title':'Próximos Lanzamientos',
-        'fichas_prod': fichas_prod,
-    })
+def product_home(request, salida=[]):
+    fichas_prod = Imagen.objects.filter(preferred=True,product_id__release_date__gte=datetime.today()).order_by('-product_id__release_date')
+    return product_filtrados(request, 'Próximos Lanzamientos', fichas_prod, salida)
 
-def product_nuevos(request):
-    todo = Imagen.objects.filter(preferred=True,product_id__new=True).order_by('-product_id__created_date')    
-    prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
-    paginator = Paginator(todo, prod_page)
-    page = request.GET.get('page')
-    todo_paginado = paginator.get_page(page)
-    return render(request, 'shop/product_cat.html',{
-        'title':'Novedades',
-        'fichas_prod': todo_paginado,
-    })
+def product_lanzamientos(request, salida=[]):
+    fichas_prod = Imagen.objects.filter(preferred=True,product_id__release_date__gt=datetime.today()).order_by('-product_id__release_date')
+    return product_filtrados(request, 'Próximos Lanzamientos', fichas_prod, salida)
 
-def product_rebajados(request):
-    todo = Imagen.objects.filter(preferred=True,product_id__sale=True).order_by('-product_id__created_date')    
-    prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
-    paginator = Paginator(todo, prod_page)
-    page = request.GET.get('page')
-    todo_paginado = paginator.get_page(page)
-    return render(request, 'shop/product_cat.html',{
-        'title':'Rebajados',
-        'fichas_prod': todo_paginado,
-    })
+def product_nuevos(request, salida=[]):
+    fichas_prod = Imagen.objects.filter(preferred=True,product_id__new=True).order_by('-product_id__release_date')
+    return product_filtrados(request, 'Novedades', fichas_prod, salida)
 
-def product_descatalogados(request):
-    todo = Imagen.objects.filter(preferred=True,product_id__destocking=True).order_by('-product_id__created_date')    
-    prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
-    paginator = Paginator(todo, prod_page)
+def product_rebajados(request, salida=[]):
+    fichas_prod = Imagen.objects.filter(preferred=True,product_id__sale=True).order_by('-product_id__updated')    
+    return product_filtrados(request, 'Rebajados', fichas_prod, salida)
+
+def product_descatalogados(request, salida=[]):
+    fichas_prod = Imagen.objects.filter(preferred=True,product_id__destocking=True).order_by('-product_id__updated')    
+    return product_filtrados(request, 'Descatalogados', fichas_prod, salida) 
+
+def product_filtrados(request, title, fichas_prod, salida=[]):   
+    prod_page=Configuracion.objects.get(variable='prod_page').get_valor_int()
+    paginator = Paginator(fichas_prod, prod_page)
     page = request.GET.get('page')
-    todo_paginado = paginator.get_page(page)
+    fichas_prod_paginado = paginator.get_page(page)
     return render(request, 'shop/product_cat.html',{
-        'title':'Descatalogados',
-        'fichas_prod': todo_paginado,
+        'title': title,
+        'fichas_prod': fichas_prod_paginado,
+        'salida': salida,
     })
 
 def product_detail(request, pk, salida=[]):
-    product = get_object_or_404(Product, pk=pk)
+    try:
+        product = Product.objects.get(pk=pk)
+    except Product.DoesNotExist:
+        #raise Http404("Product does not exist")
+        salida.append({
+            'retorno': -1,
+            'salida': "Producto No Encontrado"
+            })
+        return product_home(request, salida)
     images = Imagen.objects.filter(product_id__pk=product.pk).order_by('-preferred')
     breadcrumbs_link = product.get_fab_list('/')
     fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
     breadcrumbs = zip(breadcrumbs_link, fabricante_name)
-    beneficio=int(get_object_or_404(Configuracion, variable='beneficio').valor)
+    #pvp=product.get_pvp()
     
+    iva=Decimal(product.vat/100)
+    beneficio = Configuracion.objects.get(variable='beneficio').get_valor_dec()
+    rec_equivalencia = Configuracion.objects.get(variable='rec_equivalencia').get_valor_dec()
+    
+    req=Decimal(rec_equivalencia/1000)
+    porc_benef=Decimal(beneficio/100)
+    coste_total=product.cost_price+(product.cost_price*iva)+(product.cost_price*req)
+    #'pvp':  coste_total/(1-porc_benef),
+    #'price_iva': product.price*(1+iva),
+    #'recommended_retail_price_iva': product.recommended_retail_price*(1+iva),
+    #'default_shipping_cost_iva': product.default_shipping_cost,
     return render(request, 'shop/product_detail.html', {
+        'porc_benef': porc_benef,
+        'beneficio': (coste_total/(1-porc_benef))-coste_total,
+        'hoy': datetime.today(),
+        'date_min': datetime.min,
         'product': product, 
-        'price': product.price*product.vat/100,
-        'cost_price': product.cost_price*product.vat*beneficio/100,
-        'recommended_retail_price': product.recommended_retail_price*product.vat/100,
         'images':images, 
         'breadcrumbs':breadcrumbs,
         'salida':salida,
-        })
+    })
 
-def product_detail_slug(request, slug):
+def product_detail_slug(request, slug, salida=[]):    
+    try:
+        product = Product.objects.get(Q(ref=slug)|Q(slug=slug))
+    except Product.DoesNotExist:
+        #raise Http404("Product does not exist")
+        salida.append({
+            'retorno': -1,
+            'salida': "Producto No Encontrado"
+            })
+        return product_home(request, salida)
+    return product_detail(request, product.pk, salida)
+
+def product_anadir(request, slug):
     salida=[]
-    product = get_object_or_404(Product, Q(ref=slug)|Q(slug=slug))
-    images = Imagen.objects.filter(product_id__pk=product.pk).order_by('-preferred')
-    breadcrumbs_link = product.get_fab_list('/')
-    fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
-    breadcrumbs = zip(breadcrumbs_link, fabricante_name)
-    beneficio=int(get_object_or_404(Configuracion, variable='beneficio').valor)
-    dto_mayorista=int(get_object_or_404(Configuracion, variable='dto_mayorista').valor)
-    #print('popo'+product)
-    product.default_shipping_cost+=product.default_shipping_cost*(product.vat/100)
-    return render(request, 'shop/product_detail.html', {
-        'product': product, 
-        'price': product.price,
-        'cost_price': product.cost_price-product.cost_price*dto_mayorista/100,
-        'recommended_retail_price': product.recommended_retail_price,
-        'images':images, 
-        'breadcrumbs':breadcrumbs,
-        'salida': salida,
-        })
+    if not slug:
+        salida.append({
+            'retorno': -1,
+            'salida': " Solicitud no Encontrado ",
+            })
+        return product_home(request, salida)
+    externo = get_object_or_404(Externo, name='DreamLove_Productos')
+    tree=ET.parse(externo.path())
+    root=tree.getroot()
+    lista=[slug]
+    for prod in root.findall('product'):
+        ref = prod.find('public_id').text
+        if not ref in lista:
+            root.remove(prod)
+        #else:
+            #ET.dump(prod)
+    
+    if not root:
+        salida.append({
+            'retorno': -1,
+            'salida': " Producto no Encontrado ",
+            })
+        return product_home(request, salida)
+    else:
+        salida.append(procesar_productos(root,True))
+        salida.append(procesar_fabricantes(root))  
+        salida.append(procesar_imagenes(root))
+    print(salida)
+    return product_detail_slug(request, slug, salida)
 
 def product_actualizar(request, slug):
     externo = get_object_or_404(Externo, name='DreamLove_Productos')
@@ -196,10 +194,26 @@ def product_actualizar(request, slug):
         #else:
             #ET.dump(prod)
     salida=[]
-    salida.append(procesar_productos(root))
-    salida.append(procesar_fabricantes(root))  
-    salida.append(procesar_imagenes(root))
-    return redirect('/product/'+slug+'/', salida)
+    if not root:
+        #print('Producto Borrado')
+        salida.append(product_borrar(request,slug))
+    else:
+        salida.append(procesar_productos(root,True))
+        salida.append(procesar_fabricantes(root))  
+        salida.append(procesar_imagenes(root))
+    return product_detail_slug(request, slug, salida)
+
+def product_borrar(request, slug):
+    externo = get_object_or_404(Externo, name='DreamLove_Productos')
+    tree=ET.parse(externo.path())
+    root=tree.getroot()
+    n, resultado = Product.objects.filter(Q(ref=slug)|Q(slug=slug)).delete()
+    #n = Product.objects.filter(Q(ref=slug)|Q(slug=slug)).count
+    salida=[{
+        'retorno': n,
+        'salida': " borrado/s "+str(resultado)
+        }]
+    return product_home(request, salida)
 
 def product_search(request):
     fichas=None
@@ -215,6 +229,8 @@ def product_search(request):
                     )
                 )[:30]
     return render_to_response('shop/ajax_search.html', {'fichas': fichas})
+
+''' #####   EXTERNO   ##### '''
 
 def externo_home(request, salida=[]):
     todo = Externo.objects.all().order_by('-updated_date')
@@ -311,9 +327,10 @@ def externo_cron(request):
         salida=-4
     return HttpResponse({'Error nivel:',salida})
 
-def procesar_productos(root):
+def procesar_productos(root,insertar=False):
     if root:
         limite=int(get_object_or_404(Configuracion, variable='product_limite').valor)
+        iva_21 = Configuracion.objects.get(variable='iva').get_valor_dec()
         n=0
         nuevo=0
         encontrado=0
@@ -335,7 +352,7 @@ def procesar_productos(root):
                     #Nuevo producto añadido                
                     p = Product(ref=ref,updated=datetime.min)
                     nuevo=nuevo+1
-                if p.updated < updated:
+                if p.updated < updated or insertar:
                     try:
                         if prod.find('title').text:
                             p.title = prod.find('title').text                
@@ -353,16 +370,29 @@ def procesar_productos(root):
                         p.description = p.title
                         p.slug = slugify(p.title)
                         p.available = prod.find('available').text  
-                        p.cost_price = prod.find('cost_price').text
-                        p.price = prod.find('price').text
-                        p.product_url = prod.find('product_url').text  
-                        p.recommended_retail_price = prod.find('recommended_retail_price').text
-                        p.default_shipping_cost = prod.find('default_shipping_cost').text
+                        p.product_url = prod.find('product_url').text 
+    
+                        p.vat = Decimal(prod.find('vat').text)
+                        iva=1+(p.vat/100)
+                        p.cost_price = Decimal(prod.find('cost_price').text)
+                        p.pvp=p.get_pvp()
+                        aux = Decimal(prod.find('price').text)
+                        p.price = aux*iva
+                        aux = Decimal(prod.find('recommended_retail_price').text)
+                        p.recommended_retail_price = aux*iva                       
+                        aux = Decimal(prod.find('default_shipping_cost').text)
+                        p.default_shipping_cost = Decimal(aux*(1+iva_21/100)).quantize(Decimal('.01'), rounding=ROUND_UP)+Decimal(0.50)
+                        #if p.default_shipping_cost < 5.5:
+                        #    p.default_shipping_cost = 5.5
+
                         p.updated = updated                    
                         p.html_description = prod.find('html_description').text
                         p.delivery_desc = prod.find('delivery_desc').text
-                        p.vat = prod.find('vat').text
-                        p.unit_of_measurement = prod.find('unit_of_measurement').text
+                        
+                        if prod.find('unit_of_measurement').text=='units':
+                            p.unit_of_measurement = 'unidad/es'
+                        else:
+                            p.unit_of_measurement = prod.find('unit_of_measurement').text
                         p.release_date = prod.find('release_date').text
                         p.destocking = prod.find('destocking').text   
                         p.sale = prod.find('sale').attrib['value']
@@ -370,8 +400,7 @@ def procesar_productos(root):
                         #<stock><location path="General">50</location></stock>
                         stock = prod.find('stock')
                         p.stock = stock.find('location').text
-
-                        p.save() #created_date, 
+                        p.save() #created_date,                        
                         actualizado=actualizado+1                
                     except IntegrityError as e:    
                         #print('ERROR REF: '+p.ref)  
@@ -625,12 +654,18 @@ def externo_procesar_fabricantes(request, pk):
         'salida': [salida],
     }) 
 
+''' #####   VARIOS   ##### '''
+
 def templateshop(request):
     return render(request,"shop/templateshop.html")
 
-def product_test(request):
-    init_loaddata(request)
-    return redirect('product_home')
+def test(request):
+    request.session.set_test_cookie()
+    #init_loaddata(request)
+    if request.session.test_cookie_worked():
+        print("TEST COOKIE WORKED!")
+        request.session.delete_test_cookie()
+    return HttpResponseRedirect(reverse('index'))
 
 def product_reload(request):
     #path = "static/store/prueba.xml"
@@ -673,6 +708,8 @@ def product_reload(request):
         #root.getiterator()
     return redirect('product_list')
 
+''' #####   FABRICANTE   ##### '''
+
 def fabricante_home(request):
     fichas = Fabricante.objects.filter(parent=None)
     return render(request,"shop/fabricante_home.html",{
@@ -682,12 +719,6 @@ def fabricante_home(request):
 def fabricante_list(request):
     fichas = Fabricante.objects.filter(parent=None)
     return render(request,"shop/fabricante_list.html",{
-        'fichas': fichas,
-    })
-
-def fabricante_home(request):
-    fichas = Fabricante.objects.filter(parent=None)
-    return render(request,"shop/fabricante_home.html",{
         'fichas': fichas,
     })
 
@@ -716,9 +747,157 @@ def fabricante_detail(request,slug):
     page = request.GET.get('page')
     fichas_prod_paginado = paginator.get_page(page)
     return render(request, "shop/fabricante_detail.html", {  
+        'hoy': datetime.today(), 
         'breadcrumbs': breadcrumbs,  
         'ficha': parent,
         'sub_fabricantes': sub_fabricantes, 
         'fichas_prod': fichas_prod_paginado,
-        'n_prod': paginator.count
     })
+
+''' #####   USERPROFILE   ##### '''
+
+def user_register(request):
+    # A boolean value for telling the template
+    # whether the registration was successful.
+    # Set to False initially. Code changes value to
+    # True when registration succeeds.
+    registered = False
+
+    # If it's a HTTP POST, we're interested in processing form data.
+    if request.method == 'POST':
+        # Attempt to grab information from the raw form information.
+        # Note that we make use of both UserForm and UserProfileForm.
+        user_form = UserForm(data=request.POST)
+        profile_form = UserProfileForm(data=request.POST)
+        
+        # If the two forms are valid...
+        if user_form.is_valid() and profile_form.is_valid():
+            # Save the user's form data to the database.
+            user = user_form.save()
+
+            # Now we hash the password with the set_password method.
+            # Once hashed, we can update the user object.
+            user.set_password(user.password)
+            user.save()
+
+            # Now sort out the UserProfile instance.
+            # Since we need to set the user attribute ourselves,
+            # we set commit=False. This delays saving the model
+            # until we're ready to avoid integrity problems.
+            profile = profile_form.save(commit=False)
+            profile.user = user
+
+            # Did the user provide a profile picture?
+            # If so, we need to get it from the input form and
+            #put it in the UserProfile model.
+            if 'picture' in request.FILES:
+                profile.picture = request.FILES['picture']
+            
+            # Now we save the UserProfile model instance.
+            profile.save()
+            
+            # Update our variable to indicate that the template
+            # registration was successful.
+            registered = True
+        else:
+            # Invalid form or forms - mistakes or something else?
+            # Print problems to the terminal.
+            print(user_form.errors, profile_form.errors)
+    else:
+        # Not a HTTP POST, so we render our form using two ModelForm instances.
+        # These forms will be blank, ready for user input.
+        user_form = UserForm()
+        profile_form = UserProfileForm()
+
+    # Render the template depending on the context.
+    return render(request, 'shop/user_register.html',{
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'registered': registered,
+    })
+
+def user_login(request):
+    # If the request is a HTTP POST, try to pull out the relevant information.
+    if request.method == 'POST':
+        # Gather the username and password provided by the user.
+        # This information is obtained from the login form.
+        # We use request.POST.get('<variable>') as opposed
+        # to request.POST['<variable>'], because the
+        # request.POST.get('<variable>') returns None if the
+        # value does not exist, while request.POST['<variable>']
+        # will raise a KeyError exception.
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Use Django's machinery to attempt to see if the username/password
+        # combination is valid - a User object is returned if it is.
+        user = authenticate(username=username, password=password)
+
+        # If we have a User object, the details are correct.
+        # If None (Python's way of representing the absence of a value), no user
+        # with matching credentials was found.
+        if user:
+            # Is the account active? It could have been disabled.
+            if user.is_active:
+                # If the account is valid and active, we can log the user in.
+                # We'll send the user back to the homepage.
+                login(request, user)
+                return HttpResponseRedirect(reverse('index'))
+            else:
+                # An inactive account was used - no logging in!
+                return HttpResponse("Your Rango account is disabled.")
+        else:
+            # Bad login details were provided. So we can't log the user in.
+            print("Invalid login details: {0}, {1}".format(username, password))
+            return HttpResponse("Invalid login details supplied.")
+        # The request is not a HTTP POST, so display the login form.
+        # This scenario would most likely be a HTTP GET.
+    else:
+        # No context variables to pass to the template system, hence the
+        # blank dictionary object...
+        return render(request, 'shop/user_login.html', {})
+
+def some_view(request):
+    if not request.user.is_authenticated():
+        return HttpResponse("You are logged in.")
+    else:
+        return HttpResponse("You are not logged in.")
+
+@login_required
+def user_restricted(request):
+    return HttpResponse("Since you're logged in, you can see this text!")
+
+@login_required
+def user_logout(request):
+    # Since we know the user is logged in, we can now just log them out.
+    logout(request)
+    # Take the user back to the homepage.
+    return HttpResponseRedirect(reverse('index'))
+
+''' #####   COOKIES   ##### '''
+
+def get_server_side_cookie(request, cookie, default_val=None):
+    val = request.session.get(cookie)
+    if not val:
+        val = default_val
+    return val
+
+def visitor_cookie_handler(request):
+    visits = int(get_server_side_cookie(request, 'visits', '1'))
+    last_visit_cookie = get_server_side_cookie(request,
+        'last_visit', str(datetime.now()))
+    last_visit_time = datetime.strptime(last_visit_cookie[:-7], '%Y-%m-%d %H:%M:%S')
+    
+    # If it's been more than a day since the last visit...
+    if (datetime.now() - last_visit_time).days > 0:
+        visits = visits + 1
+        #update the last visit cookie now that we have updated the count
+        request.session['last_visit'] = str(datetime.now())
+    else:
+        # set the last visit cookie
+        request.session['last_visit'] = last_visit_cookie
+    
+    # Update/set the visits cookie
+    request.session['visits'] = visits
+
+''' #####   #####   ##### '''
