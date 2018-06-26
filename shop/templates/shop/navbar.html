@@ -22,36 +22,35 @@
         </li>
         <li class="nav-item"><a class="nav-link" href="{% url 'fabricante_home' %}">Marcas</a></li>
         {% if user.is_authenticated %}            
-            <li class="nav-item"><a class="nav-link" href="{% url 'admin' %}" target="_blank">Admin</a></li>     
+            <li class="nav-item"><a class="nav-link" href="/admin/" target="_blank">Admin</a></li>     
             <li class="nav-item"><a class="nav-link" href="{% url 'externo_home' %}">Externo</a></li> 
             <li class="nav-item">
                 <a id="btnGroupDrop2" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Hola, {{ user.username }}</a>
                 <div class="dropdown-menu" aria-labelledby="btnGroupDrop2">
-                    <a class="dropdown-item" href="#">Mis Datos</a>
+                    <a class="dropdown-item" href="{% url 'myprofile' %}">Mi Perfil</a>
                     <a class="dropdown-item" href="#">Mis Pedidos</a>
-                    <a class="dropdown-item" href="{% url 'user_password_change' %}">Cambiar Contraseña</a>
-                    <a class="dropdown-item" href="{% url 'user_password_reset' %}">Resetear Contraseña</a>
-                    
-                    <a class="dropdown-item" href="{% url 'user_logout' %}">Cerrar Sesión</a>
-                    <p class="dropdown-item"> Nº Visitas: {{ visits }}</p>
+                    <a class="dropdown-item" href="{% url 'auth_password_change' %}">Change Password</a>
+                    <a class="dropdown-item" href="{% url 'auth_password_reset' %}">Reset Password</a>
+                    <a class="dropdown-item" href="{% url 'auth_logout' %}?next=/">Cerrar Sesión</a>
+                    <p class="dropdown-item"> Nº Visitas: {{ visits }}</p>  
                 </div>
             </li>
         {% else %}
             <li class="nav-item">
                 <a id="btnGroupDrop3" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Zona Privada</a>
                 <div class="dropdown-menu" aria-labelledby="btnGroupDrop3">
-                    <a class="dropdown-item" href="{% url 'user_register' %}">Registrarse</a>
-                    <a class="dropdown-item" href="{% url 'user_register_complete' %}">Registro Completo</a>
-                    <a class="dropdown-item" href="{% url 'user_login' %}">Acceder</a>
+                    <a class="dropdown-item" href="{% url 'auth_login' %}">Acceder</a> 
+                    <a class="dropdown-item" href="{% url 'registration_register' %}">Registrarse</a>
                 </div>
             </li>
         {% endif %}
         <li class="nav-item">
             <a id="btnGroupDrop9" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Otros</a>
             <div class="dropdown-menu" aria-labelledby="btnGroupDrop9">
-                <a class="dropdown-item" href="restricted/">Restricted</a>
+                <a class="dropdown-item" href="restricted/">Página Restringida</a>
                 <a class="dropdown-item" href="templateshop/">TemplateShop</a>
                 <a class="dropdown-item" href="{% url 'test' %}">Test</a>
+                <a class="dropdown-item" href="/blog/">Blog</a>
                 <a class="dropdown-item" href="#">About</a>
                 <a class="dropdown-item" href="#">Services</a>
                 <a class="dropdown-item" href="#">Contact</a>

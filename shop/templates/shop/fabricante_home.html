@@ -1,15 +1,29 @@
 {% extends 'shop/base.html' %}
 {% load static %}
+{% block title %}Marcas y Fabricantes{% endblock %}
 {% block navbar %}
     {% include 'shop/navbar.html' %}
 {% endblock %}
 {% block content %}
-    <h1>Fabricantes y Marcas</h1>
-    {% if fichas %}
-        {% include 'shop/fabricante_grid.html' %}
-    {% else %}
-        <h4>· No Resultados ·</h4>
-    {% endif %}
+    <div class="col-lg-3">
+        <h2 class="my-4 text-center">Marcas y Fabricantes</h1>
+        <div class="list-group pr-2">
+            <a href="#" class="list-group-item">link 1</a>
+            <a href="#" class="list-group-item">link 2</a>
+        </div>    
+    </div>
+    <!-- /.col-lg-3 -->  
+    <div class="col-lg-9"> 
+        <div class="row">
+            {% if fichas %}
+                {% include 'shop/fabricante_grid.html' %}
+            {% else %}
+                <h4>· No Resultados ·</h4>
+            {% endif %}
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.col-lg-9 -->
 {% endblock %}
 {% block footer %}
     {% include 'shop/footer.html' %}

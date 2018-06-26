@@ -2,6 +2,12 @@ from django.conf.urls import include, url
 from . import views
 from django.urls import path
 from django.views.generic.base import RedirectView
+from registration.backends.simple.views import RegistrationView
+
+#if successful at logging
+class MyRegistrationView(RegistrationView):
+    def get_success_url(self, user):
+        return '/myprofile/'
 
 urlpatterns = [
     url(r'^$', views.index, name='index'), 
@@ -40,16 +46,21 @@ urlpatterns = [
     
     url(r'^cat/$', views.categoria_home, name='categoria_home'),
     
-    url(r'^register/$', views.user_register, name='user_register'),
-    url(r'^login/$', views.user_login, name='user_login'),
-    url(r'^logout/$', views.user_logout, name='user_logout'),
-
     url(r'^restricted/', views.user_restricted, name='restricted'),
+    url(r'^myprofile/', views.user_myprofile, name='myprofile'),
+    url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
 
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
    
     ]    
-#   url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'), 
+
+    #url(r'^register/$', views.user_register, name='user_register'),
+    #url(r'^login/$', views.user_login, name='user_login'),
+    #url(r'^logout/$', views.user_logout, name='user_logout'),
+    
+    #url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'), 
+
+
 #    
 #   https://getbootstrap.com/docs/4.0/
 #   https://www.w3schools.com/bootstrap4/
