@@ -38,16 +38,25 @@ def populate():
         {"variable": "product_limite",  "valor": "300", "activo": True},
         {"variable": "imagen_limite",   "valor": "400", "activo": True},
         {"variable": "fabricante_limite", "valor": "300", "activo": True},
+        {"variable": "categoria_limite",  "valor": "300", "activo": True},
         {"variable": "prod_page",       "valor": "24",  "activo": True},
         {"variable": "prod_home",       "valor": "24",  "activo": True},
         {"variable": "run_cron",        "valor": "",    "activo": True},
         {"variable": "beneficio",       "valor": "58",  "activo": True},
-        {"variable": "rec_equivalencia","valor": "0,052", "activo": True},
+        {"variable": "rec_equivalencia","valor": "52",  "activo": True},
         {"variable": "iva",             "valor": "21",  "activo": True},
     ]
 
     shop_fabricantes = [
         {"name": "DIABLA ROJA", "slug": "DIABLA ROJA", "parent": None},
+    ]
+
+    shop_categories = [
+        {"name": "Ofertas", "parent": None},
+        {"name": "Para Hombre", "parent": None},
+        {"name": "Para Mujer", "parent": None},
+        {"name": "Para Parejas", "parent": None},
+        {"name": "Lista Negra", "parent": None},
     ]
 
     # If you want to add more catergories or pages,
@@ -65,12 +74,18 @@ def populate():
     for f in shop_fabricantes:
         add_fabricante(f["name"],f["slug"],f["parent"])
     
+    for cat in shop_categories:
+        add_category(cat["name"],cat["parent"])
+    
     # Print out the objects we have added.
-    for c in Configuracion.objects.all():
-        print("{0} ".format(str(c)))
+    #for c in Configuracion.objects.all():
+    #    print("{0} ".format(str(c)))
     
     #for f in Fabricante.objects.all():
     #    print("{0} ".format(str(f)))
+
+    for cat in Category.objects.all():
+        print("{0} ".format(str(cat)))
 
 def add_configuracion(variable, valor, activo=True):
     obj = Configuracion.objects.get_or_create(variable=variable)[0]
@@ -85,6 +100,19 @@ def add_fabricante(name, slug, parent=None):
     obj.save()
     return obj
 
+def add_category(name, parent=None):
+    obj = Category.objects.get_or_create(name=name, parent=parent)[0]
+    obj.slug=slugify(name)
+    if parent:
+        try:
+            obj.parent=Category.objects.get(slug=parent)[0]
+        except:
+            obj.parent=None
+    else:
+        obj.parent=None
+    obj.save()
+    return obj
+    
     '''
     for cat, cat_data in cats.items():
         c = add_cat(cat)

@@ -22,9 +22,7 @@ urlpatterns = [
 
     url(r'^ext/$', views.externo_home, name='externo_home'),
     url(r'^ext/init_loadfile/$', views.init_loadfile, name='init_loadfile'),
-
     url(r'^cron/$', views.externo_cron, name='externo_cron'),
-        
     url(r'^reload/$', views.product_reload, name='product_reload'),
     
     url(r'^product/$', views.product_home, name='product_home'), 
@@ -48,13 +46,14 @@ urlpatterns = [
     url(r'^ext/(?P<pk>[0-9]+)/procesar_imagenes/$', views.externo_procesar_imagenes, name='externo_procesar_imagenes'),
     url(r'^ext/(?P<pk>[0-9]+)/procesar_fabricantes/$', views.externo_procesar_fabricantes, name='externo_procesar_fabricantes'),   
     
-    url(r'^cat/$', views.categoria_home, name='categoria_home'),
+    url(r'^cat/$', views.category_home, name='category_home'),
     
     url(r'^restricted/', views.user_restricted, name='restricted'),
     url(r'^myprofile/', views.user_myprofile, name='myprofile'),
     url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
 
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
+    path('phpmyadmin/', RedirectView.as_view(url='//localhost/phpmyadmin/'), name='phpmyadmin'),
    
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)    
 

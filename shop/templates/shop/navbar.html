@@ -21,6 +21,7 @@
             </div>
         </li>
         <li class="nav-item"><a class="nav-link" href="{% url 'fabricante_home' %}">Marcas</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'category_home' %}">Categorías</a></li>
         {% if user.is_authenticated %}            
             <li class="nav-item"><a class="nav-link" href="/admin/" target="_blank">Admin</a></li>     
             <li class="nav-item"><a class="nav-link" href="{% url 'externo_home' %}">Externo</a></li> 
@@ -51,6 +52,7 @@
                 <a class="dropdown-item" href="templateshop/">TemplateShop</a>
                 <a class="dropdown-item" href="/blog/">Blog</a>
                 <a class="dropdown-item" href="{% url 'about' %}">About</a>
+                <a class="dropdown-item" href="{% url 'phpmyadmin' %}" target="_blank">PHPMyAdmin</a>
                 <a class="dropdown-item" href="#">Services</a>
                 <a class="dropdown-item" href="#">Contact</a>
             </div>

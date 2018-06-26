@@ -52,10 +52,13 @@ def index(request):
         'fabricantes' : Fabricante.objects.filter(parent=None),
     })
 
-''' #####   CATEGORÍAS   ##### '''
+''' #####   CATEGORY   ##### '''
 
-def categoria_home(request):
-    return redirect('product_home')
+def category_home(request):
+    fichas = Fabricante.objects.filter(parent=None)
+    return render(request,"shop/category_home.html",{
+        'fichas': fichas,
+    })
 
 ''' #####   PRODUCTOS   ##### '''
 

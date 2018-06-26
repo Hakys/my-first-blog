@@ -1,26 +1,24 @@
-from django.db import models
-from django.utils import timezone
-from django.utils.text import slugify
-from datetime import datetime
 import pytz
+from datetime import datetime
+from decimal import *
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.files import File
 from django.core.files.storage import Storage
 from django.core.files.storage import FileSystemStorage
-from urllib.request import Request, urlopen
+from django.db import models
+from django.utils import timezone
+from django.utils.text import slugify
 from urllib.error import URLError, HTTPError 
-from django.conf import settings
-from decimal import *
-
-from django.contrib.auth.models import User
+from urllib.request import Request, urlopen
 
 fs_img = FileSystemStorage(location=settings.MEDIA_ROOT)
 
 class Imagen_gen(models.Model):
-    title = models.CharField(max_length=200,null=True)
-    img = models.ImageField(storage=fs_img,null=True)
-    url = models.URLField(unique=True,null=True,blank=True)
-    preferred = models.BooleanField('Portada',default=False)
+    title = models.CharField(max_length=200, null=True)
+    img = models.ImageField(storage=fs_img, null=True)
+    url = models.URLField(unique=True, null=True, blank=True)
+    preferred = models.BooleanField('Portada', default=False)
     
     def get_url():
         if self.url:
@@ -42,33 +40,23 @@ class Imagen_gen(models.Model):
 #</categories>    
 
 class Category(models.Model):
-    name = models.CharField(max_length=128,blank=False)
-    slug = models.SlugField(max_length=128,blank=False)
+    name = models.CharField(max_length=128, blank=False)
+    slug = models.SlugField(max_length=128, blank=False)
     activo = models.BooleanField(default=True)
-    gesioid = models.IntegerField(unique=True,null=True) 
-    
-    def __init__(self, name,activo,gesioid):
-        self.name = name
-        self.slug = slugify(name)
-        self.activo = activo
-        self.gesioid = gesioid
-
+    gesioid = models.IntegerField(unique=True, null=True) 
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='super_category')
+     
     def __str__(self):  
         return self.name
 
     class Meta:
         ordering = ('name',)
-        verbose_name = 'Category'
-        verbose_name_plural = 'Categories'  
-         
+        verbose_name_plural = 'Categorias'  
+        unique_together = ('slug', 'parent',)
 
-'''  unique_together = ('slug', 'parent',) 
-    activo = models.BooleanField(default=True)
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True ,related_name='sub_category')
+''' 
     image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
-    gesioid = models.IntegerField(unique=True,null=True)
 
-    
         if self.activo: 
             activo='Si' 
         else: 
@@ -78,17 +66,8 @@ class Category(models.Model):
         while k is not None:
             full_path.append(k.name)
             k = k.parent
-        return ' -> '.join(full_path[::-1])    
-    
-    
-
-    name = models.CharField(max_length=200)    
-    #image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE,blank=True,null=True)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
-    slug = models.SlugField(blank=True, null=True)
-    parent = models.ForeignKey('self', null=True ,related_name='children', on_delete=None)
-    
-
+        return ' -> '.join(full_path[::-1])
+        
     class Meta:
         unique_together = ('slug', 'parent',)
         verbose_name_plural = "categorias"       #categories under a parent with same slug 
@@ -110,11 +89,11 @@ class Category(models.Model):
 #<brand><![CDATA[REALROCK 100% FLESH]]></brand>
 #<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
 class Fabricante(models.Model):
-    name = models.CharField(max_length=50,unique=True) 
+    name = models.CharField(max_length=50, unique=True) 
     slug = models.SlugField(max_length=200)
     activo = models.BooleanField(default=True)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True ,related_name='children')
-    image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='children')
+    image = models.ForeignKey(Imagen_gen, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):  
         if self.activo: 
@@ -134,7 +113,7 @@ class Fabricante(models.Model):
         verbose_name = "Fabricante"
         verbose_name_plural = "Marcas"
 
-    def get_fab_list(self,separador):
+    def get_fab_list(self, separador):
         k = self.parent
         breadcrumb = ["dummy"]
         while k is not None:
@@ -146,44 +125,43 @@ class Fabricante(models.Model):
         return breadcrumb[-1:0:-1]
 
 class Product(models.Model): 
-    slug = models.SlugField(max_length=200,unique=True,null=False)
-    portada = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
-    ref = models.CharField(max_length=20,unique=True)
+    slug = models.SlugField(max_length=200, unique=True, null=False)
+    portada = models.ForeignKey(Imagen_gen, on_delete=models.CASCADE, blank=True, null=True)
+    ref = models.CharField(max_length=20, unique=True)
     title = models.CharField(max_length=200) 
     description = models.TextField(blank=True, null=True)
     html_description = models.TextField(blank=True, null=True)		
     product_url = models.URLField(blank=True)
 
-    updated = models.DateTimeField('Última Actualización',default=timezone.now)
+    updated = models.DateTimeField('Última Actualización', default=timezone.now)
     created_date = models.DateTimeField(default=timezone.now)
-    release_date = models.DateTimeField('Lanzamiento',blank=True, null=True)
+    release_date = models.DateTimeField('Lanzamiento', blank=True, null=True)
 
-    available = models.BooleanField('Disponible',default=True)
-    destocking = models.BooleanField('Liquidación',default=False)    
-    sale = models.BooleanField('Rebajado',default=False)
-    new = models.BooleanField('Nuevo',default=True)
+    available = models.BooleanField('Disponible', default=True)
+    destocking = models.BooleanField('Liquidación', default=False)    
+    sale = models.BooleanField('Rebajado', default=False)
+    new = models.BooleanField('Nuevo', default=True)
 
-    cost_price = models.DecimalField(max_digits=8,decimal_places=2)
-    price = models.DecimalField(max_digits=8,decimal_places=2)
-    recommended_retail_price = models.DecimalField(max_digits=8,decimal_places=2,default=0)
-    default_shipping_cost = models.DecimalField(decimal_places=2,max_digits=8,default=0)
-    delivery_desc = models.CharField(max_length=20,blank=True)
-    vat = models.DecimalField('IVA',decimal_places=2,max_digits=4,default=21.00)
-    unit_of_measurement = models.CharField(max_length=20,blank=True)
-    pvp = models.DecimalField(max_digits=8,decimal_places=2,default=0)
+    cost_price = models.DecimalField(max_digits=8, decimal_places=2)
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    recommended_retail_price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    default_shipping_cost = models.DecimalField(decimal_places=2, max_digits=8, default=0)
+    delivery_desc = models.CharField(max_length=20, blank=True)
+    vat = models.DecimalField('IVA',decimal_places=2, max_digits=4, default=21.00)
+    unit_of_measurement = models.CharField(max_length=20, blank=True)
+    pvp = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
-    fabricante = models.ForeignKey(Fabricante, on_delete=models.CASCADE, null=True)
+    fabricante = models.ForeignKey(Fabricante, on_delete=models.SET_NULL, null=True)
 
     #<stock><location path="General">50</location></stock>
     stock = models.IntegerField(default=0)
 
-    #category = models.ForeignKey('Categoria', null=True, blank=True, on_delete=None)
-    #categorias = models.ManyToManyField(Categoria)
+    category = models.ForeignKey(Category, null=True, on_delete=models.SET_NULL, related_name='category_ppal')
+    categories = models.ManyToManyField(Category)
+
     #prepaid_reservation = models.BooleanField('Pre-Pedido',default=False)
-    
     #shipping_weight_grame = models.IntegerField(default=0)
     #brand = models.CharField(max_length=200,blank=True)
-
     #<min_units_per_order>1</min_units_per_order>
 	#<max_units_per_order>999</max_units_per_order>
 	#<min_amount_per_order>1</min_amount_per_order>
@@ -226,7 +204,7 @@ class Product(models.Model):
         self.available = True
         self.save()
     
-    def get_fab_list(self,separador):
+    def get_fab_list(self, separador):
         k = self.fabricante
         breadcrumb = ["dummy"]
         while k is not None:
@@ -250,19 +228,18 @@ class Product(models.Model):
         cost_price = Decimal(self.cost_price)
         coste_total=cost_price+cost_price*iva+cost_price*req
         self.pvp = round(coste_total/(1-porc_benef),2)
-        #self.save()
         return self.pvp
 
 #fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')  
 class Imagen(models.Model):
-    title = models.CharField(max_length=200,blank=True,null=True)
-    name = models.CharField(max_length=200,blank=True,null=True)
-    ref = models.CharField(max_length=20,blank=True)
-    product_id = models.ForeignKey(Product,on_delete=models.CASCADE,null=False)
+    title = models.CharField(max_length=200, blank=True, null=True)
+    name = models.CharField(max_length=200, blank=True, null=True)
+    ref = models.CharField(max_length=20, blank=True)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
     #img = models.ImageField(storage=fs)
     src = models.URLField(unique=True)
     url = models.URLField(blank=True)
-    preferred = models.BooleanField('Portada',default=False)
+    preferred = models.BooleanField('Portada', default=False)
     
     def __str__(self):
         if self.preferred: 
@@ -280,11 +257,11 @@ class Imagen(models.Model):
 fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
 
 class Externo(models.Model): 
-    name = models.CharField(max_length=200,unique=True)
+    name = models.CharField(max_length=200, unique=True)
     url = models.URLField()
-    file = models.FileField(storage=fs,null=True, blank=True)
-    created_date = models.DateTimeField('Fecha de Creación',default=timezone.now)  
-    updated_date = models.DateTimeField('Última Actualización',default=datetime.min)
+    file = models.FileField(storage=fs, null=True, blank=True)
+    created_date = models.DateTimeField('Fecha de Creación', default=timezone.now)  
+    updated_date = models.DateTimeField('Última Actualización', default=datetime.min)
     n_productos = models.IntegerField(default=0)
     n_fabricantes = models.IntegerField(default=0)
     n_imagenes = models.IntegerField(default=0)
@@ -299,6 +276,7 @@ class Externo(models.Model):
         except URLError as e:
             print('We failed to reach a server.')
             print('Reason: '+e.reason)
+        
         else:      
             fecha = datetime.now().strftime("%Y%m%d-%H%M")
             extension = self.url.split('.')[-1]
@@ -318,7 +296,7 @@ class Externo(models.Model):
         return self.file.name+' ('+str(self.updated_date)+')'
 
 class Configuracion(models.Model):
-    variable = models.CharField(max_length=200,null=False,unique=True)
+    variable = models.CharField(max_length=200, null=False, unique=True)
     valor = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)
 
@@ -337,13 +315,13 @@ class Configuracion(models.Model):
             return int(self.valor)
         else:
             return False
-    
+
     def get_valor(self):
         if self.activo:
             return str(self.valor)
         else:
             return False
-    
+ 
     def get_valor_dec(self):
         if self.activo:
             return Decimal(self.valor)
@@ -352,8 +330,8 @@ class Configuracion(models.Model):
 
 class UserProfile(models.Model):
     # This line is required. Links UserProfile to a User model instance.
-    user = models.OneToOneField(User,on_delete=models.CASCADE,default=None)
-    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, default=None)
+
     # The additional attributes we wish to include.
     website = models.URLField(blank=True)
     picture = models.ImageField(upload_to='profile_images', blank=True)
