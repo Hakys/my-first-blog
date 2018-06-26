@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.conf.urls import include, url
 from . import views
 from django.urls import path
@@ -11,16 +13,18 @@ class MyRegistrationView(RegistrationView):
 
 urlpatterns = [
     url(r'^$', views.index, name='index'), 
+    
+    url(r'^about/$', views.about, name='about'), 
+    url(r'^templateshop/$', views.templateshop, name="templateshop"),
+
 	url(r'^fab/$', views.fabricante_home, name='fabricante_home'),
     url(r'^fab/(?P<slug>.+)/$', views.fabricante_detail, name='fabricante_detail'),
 
-    url(r'^templateshop/$', views.templateshop, name="templateshop"),
-    
     url(r'^ext/$', views.externo_home, name='externo_home'),
     url(r'^ext/init_loadfile/$', views.init_loadfile, name='init_loadfile'),
 
     url(r'^cron/$', views.externo_cron, name='externo_cron'),
-    url(r'^test/$', views.test, name='test'),     
+        
     url(r'^reload/$', views.product_reload, name='product_reload'),
     
     url(r'^product/$', views.product_home, name='product_home'), 
@@ -52,7 +56,7 @@ urlpatterns = [
 
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
    
-    ]    
+    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)    
 
     #url(r'^register/$', views.user_register, name='user_register'),
     #url(r'^login/$', views.user_login, name='user_login'),

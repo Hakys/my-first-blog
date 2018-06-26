@@ -40,16 +40,35 @@ class Imagen_gen(models.Model):
 #   <category gesioid="129" ref="Especial Gays"><![CDATA[Juguetes XXX|Especial Gays]]></category>
 #   <category gesioid="7" ref="Anal"><![CDATA[Juguetes XXX|Anal]]></category>
 #</categories>    
-'''
-class Categoria(models.Model):
-    name = models.CharField(max_length=50) 
-    slug = models.SlugField(blank=True, null=True)
+
+class Category(models.Model):
+    name = models.CharField(max_length=128,blank=False)
+    slug = models.SlugField(max_length=128,blank=False)
+    activo = models.BooleanField(default=True)
+    gesioid = models.IntegerField(unique=True,null=True) 
+    
+    def __init__(self, name,activo,gesioid):
+        self.name = name
+        self.slug = slugify(name)
+        self.activo = activo
+        self.gesioid = gesioid
+
+    def __str__(self):  
+        return self.name
+
+    class Meta:
+        ordering = ('name',)
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'  
+         
+
+'''  unique_together = ('slug', 'parent',) 
     activo = models.BooleanField(default=True)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, blank=True, null=True ,related_name='sub_category')
     image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
     gesioid = models.IntegerField(unique=True,null=True)
 
-    def __str__(self):  
+    
         if self.activo: 
             activo='Si' 
         else: 
@@ -61,17 +80,14 @@ class Categoria(models.Model):
             k = k.parent
         return ' -> '.join(full_path[::-1])    
     
-    class Meta:
-        ordering = ('name',)
-        verbose_name = 'Categoria'
-        verbose_name_plural = 'Categorías'
+    
 
     name = models.CharField(max_length=200)    
     #image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE,blank=True,null=True)
-    gesioid = models.IntegerField(unique=True,null=True)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
     slug = models.SlugField(blank=True, null=True)
     parent = models.ForeignKey('self', null=True ,related_name='children', on_delete=None)
-    activo = models.BooleanField(default=True)
+    
 
     class Meta:
         unique_together = ('slug', 'parent',)

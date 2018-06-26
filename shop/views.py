@@ -659,7 +659,7 @@ def externo_procesar_fabricantes(request, pk):
 def templateshop(request):
     return render(request,"shop/templateshop.html")
 
-def test(request):
+def about(request):
     request.session.set_test_cookie()
     #init_loaddata(request)
     if request.session.test_cookie_worked():
