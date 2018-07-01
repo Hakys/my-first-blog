@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='super_category', to='shop.Category')),
             ],
             options={
-                'verbose_name_plural': 'Categorias',
+                'verbose_name_plural': 'Categories',
                 'ordering': ('name',),
             },
         ),

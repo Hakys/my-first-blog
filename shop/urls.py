@@ -45,6 +45,7 @@ urlpatterns = [
     url(r'^ext/(?P<pk>[0-9]+)/procesar_productos/$', views.externo_procesar_productos, name='externo_procesar_productos'),
     url(r'^ext/(?P<pk>[0-9]+)/procesar_imagenes/$', views.externo_procesar_imagenes, name='externo_procesar_imagenes'),
     url(r'^ext/(?P<pk>[0-9]+)/procesar_fabricantes/$', views.externo_procesar_fabricantes, name='externo_procesar_fabricantes'),   
+    url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'),   
     
     url(r'^cat/$', views.category_home, name='category_home'),
     
@@ -53,7 +54,7 @@ urlpatterns = [
     url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
 
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
-    path('phpmyadmin/', RedirectView.as_view(url='//localhost/phpmyadmin/'), name='phpmyadmin'),
+    path('phpmyadmin/', RedirectView.as_view(url='http://localhost/phpmyadmin/db_structure.php?server=1&db=djangogirls&token=24b7ee8a1e9f702aa5a70f85fcc44d70'), name='phpmyadmin'),
    
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)    
 

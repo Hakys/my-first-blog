@@ -1,25 +1,27 @@
 from .models import *
 from .forms import *
+from decimal import *
+from datetime import datetime
+from time import time
+from django.conf import settings
+from django.contrib.auth import *
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files import File
+from django.core.files.storage import Storage, FileSystemStorage
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import models, IntegrityError
+from django.db.models import Q
+from django.http import *
 from django.shortcuts import render, get_object_or_404, redirect, render_to_response
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.dateparse import parse_datetime
-from datetime import datetime
-from time import time
-from django.db import models, IntegrityError
-from django.db.models import Q
-import xml.etree.ElementTree as ET
-from django.conf import settings
-from django.core.files import File
-from django.core.files.storage import Storage, FileSystemStorage
 from urllib.request import Request, urlopen, URLError, HTTPError  
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import *
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from decimal import *
-from django.contrib.auth import *
-from django.contrib.auth.decorators import login_required
-from django.urls import reverse
+import sys
+import traceback
+import xml.etree.ElementTree as ET
 
 def init_loadfile(request):
     salida=[]   #{'retorno': 0,'salida': "no error"}
@@ -157,7 +159,7 @@ def product_anadir(request, slug):
     if not slug:
         salida.append({
             'retorno': -1,
-            'salida': " Solicitud no Encontrado ",
+            'salida': " Solicitud no Encontrada ",
             })
         return product_home(request, salida)
     externo = get_object_or_404(Externo, name='DreamLove_Productos')
@@ -201,7 +203,7 @@ def product_actualizar(request, slug):
         #print('Producto Borrado')
         salida.append(product_borrar(request,slug))
     else:
-        salida.append(procesar_productos(root,True))
+        salida.append(procesar_productos(root))
         salida.append(procesar_fabricantes(root))  
         salida.append(procesar_imagenes(root))
     return product_detail_slug(request, slug, salida)
@@ -355,60 +357,60 @@ def procesar_productos(root,insertar=False):
                     #Nuevo producto añadido                
                     p = Product(ref=ref,updated=datetime.min)
                     nuevo=nuevo+1
-                if p.updated < updated or insertar:
-                    try:
-                        if prod.find('title').text:
-                            p.title = prod.find('title').text                
-                        else:
-                            if prod.find('description').text:
-                                p.title = prod.find('description').text
-                            else:    
-                                if prod.find('internationalization/title/value').text:
-                                    p.title = prod.find('internationalization/title/value').text
-                                else: 
-                                    if prod.find('internationalization/description/value').text:
-                                        p.title = prod.find('internationalization/description/value').text
+                    pass
+                finally:
+                    if p.updated < updated or insertar:
+                        try:
+                            if prod.find('title').text:
+                                p.title = prod.find('title').text                
+                            else:
+                                if prod.find('description').text:
+                                    p.title = prod.find('description').text
+                                else:    
+                                    if prod.find('internationalization/title/value').text:
+                                        p.title = prod.find('internationalization/title/value').text
                                     else: 
-                                        p.title = p.ref
-                        p.description = p.title
-                        p.slug = slugify(p.title)
-                        p.available = prod.find('available').text  
-                        p.product_url = prod.find('product_url').text 
-    
-                        p.vat = Decimal(prod.find('vat').text)
-                        iva=1+(p.vat/100)
-                        p.cost_price = Decimal(prod.find('cost_price').text)
-                        p.pvp=p.get_pvp()
-                        aux = Decimal(prod.find('price').text)
-                        p.price = aux*iva
-                        aux = Decimal(prod.find('recommended_retail_price').text)
-                        p.recommended_retail_price = aux*iva                       
-                        aux = Decimal(prod.find('default_shipping_cost').text)
-                        p.default_shipping_cost = Decimal(aux*(1+iva_21/100)).quantize(Decimal('.01'), rounding=ROUND_UP)+Decimal(0.50)
-                        #if p.default_shipping_cost < 5.5:
-                        #    p.default_shipping_cost = 5.5
+                                        if prod.find('internationalization/description/value').text:
+                                            p.title = prod.find('internationalization/description/value').text
+                                        else: 
+                                            p.title = p.ref
+                            p.description = p.title
+                            p.slug = slugify(p.title+' '+p.ref)
+                            p.available = prod.find('available').text  
+                            p.product_url = prod.find('product_url').text 
+        
+                            p.vat = Decimal(prod.find('vat').text)
+                            iva=1+(p.vat/100)
+                            p.cost_price = Decimal(prod.find('cost_price').text)
+                            p.pvp=p.get_pvp()
+                            aux = Decimal(prod.find('price').text)
+                            p.price = aux*iva
+                            aux = Decimal(prod.find('recommended_retail_price').text)
+                            p.recommended_retail_price = aux*iva                       
+                            aux = Decimal(prod.find('default_shipping_cost').text)
+                            p.default_shipping_cost = Decimal(aux*(1+iva_21/100)).quantize(Decimal('.01'), rounding=ROUND_UP)+Decimal(0.50)
 
-                        p.updated = updated                    
-                        p.html_description = prod.find('html_description').text
-                        p.delivery_desc = prod.find('delivery_desc').text
-                        
-                        if prod.find('unit_of_measurement').text=='units':
-                            p.unit_of_measurement = 'unidad/es'
-                        else:
-                            p.unit_of_measurement = prod.find('unit_of_measurement').text
-                        p.release_date = prod.find('release_date').text
-                        p.destocking = prod.find('destocking').text   
-                        p.sale = prod.find('sale').attrib['value']
-                        p.new = prod.find('new').attrib['value']
-                        #<stock><location path="General">50</location></stock>
-                        stock = prod.find('stock')
-                        p.stock = stock.find('location').text
-                        p.save() #created_date,                        
-                        actualizado=actualizado+1                
-                    except IntegrityError as e:    
-                        #print('ERROR REF: '+p.ref)  
-                        error=error+1  
-                        pass  
+                            p.updated = updated       
+                            p.html_description = prod.find('html_description').text
+                            p.delivery_desc = prod.find('delivery_desc').text
+                            
+                            if prod.find('unit_of_measurement').text=='units':
+                                p.unit_of_measurement = 'unidad/es'
+                            else:
+                                p.unit_of_measurement = prod.find('unit_of_measurement').text
+                            p.release_date = prod.find('release_date').text
+                            p.destocking = prod.find('destocking').text   
+                            p.sale = prod.find('sale').attrib['value']
+                            p.new = prod.find('new').attrib['value']
+                            #<stock><location path="General">50</location></stock>
+                            stock = prod.find('stock')
+                            p.stock = stock.find('location').text
+                            p.save() #created_date,               
+                            actualizado=actualizado+1                 
+                        except  IntegrityError as e:
+                            print('INTEGRITYERROR REF: {0} ERROR: {1}'.format(p.ref,e)) 
+                            #ET.dump(prod)
+                            error=error+1  
                 n=n+1  
             else:
                 break              
@@ -596,42 +598,15 @@ def procesar_fabricantes(root):
                         error=error+1
                 except ObjectDoesNotExist as e:
                     error=error+1
-                '''
-                    parent=Categoria.objects.get(gesioid=0)
-                    for categoria in prod.find('categories'):
-                        name = categoria.attrib['ref']
-                        gesioid = categoria.attrib['gesioid']
-                    
-                        for cat_name in categoria.text.split('|'):
-                            try:
-                                c = Categoria(name=cat_name)
-                                #c.image = Imagen_gen(title=name,url=prod.find('images/image/src').text)
-                                #c.image.save()
-                                c.parent = parent
-                                c.save()
-                                parent = c
-                            except IntegrityError as e:
-                                #print(str(gesioid)+' '+name)
-                                pass
-                        try:                        
-                            c = Categoria(name=name)
-                            #c.image = Imagen_gen(title=name,url=prod.find('images/image/src').text)
-                            #c.image.save()
-                            c.parent = parent
-                            c.save()                    
-                        except IntegrityError as e:
-                            #print(str(gesioid)+' '+name)
-                            pass 
-                    '''
                 n=n+1 
             else:
                 break              
         return {
             'retorno': nuevo, 
             'salida': '<br> Productos Procesados: '+str(n)
-                +'<br> Fabricantes Encontradas: '+str(encontrado)
+                +'<br> Fabricantes Encontrados: '+str(encontrado)
                 +'<br> Nuevos: '+str(nuevo)
-                +'<br> Actualizadas: '+str(actualizado)
+                +'<br> Actualizados: '+str(actualizado)
                 +'<br> Errores: '+str(error)
                 +'<br> Total: '+str(encontrado+nuevo)
             }
@@ -646,10 +621,90 @@ def externo_procesar_fabricantes(request, pk):
     tree=ET.parse(externo.path())
     root=tree.getroot() 
     salida = procesar_fabricantes(root)
-    #externo.n_productos = len(Product.objects.all())
-    externo.n_fabricantes = len(Fabricante.objects.all())
-    #externo.n_imagenes = len(Imagen.objects.all())
-    #externo.n_categorias = len(Categoria.objects.all())
+    externo.n_fabricantes = Fabricante.objects.all().count()
+    externo.save()
+    return render(request, 'shop/externo_detail.html',{
+        'externo': externo,
+        'tamano': externo.file.size/1048576,
+        'salida': [salida],
+    }) 
+
+def procesar_categorias(root):
+    if not root:
+        return { 'retorno':-1, 'salida': "no root" }
+    limite=int(Configuracion.objects.get(variable='categoria_limite').valor)
+    n=0
+    nuevo=0
+    encontrado=0
+    actualizado=0
+    error=0
+    for prod in root.findall('product'):        
+        if nuevo<limite: 
+            ref = prod.find('public_id').text
+            #<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
+            #	<categories>
+            #		<category gesioid="87" ref="Aceites Esenciales"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Aceites esenciales]]></category>
+            #		<category gesioid="94" ref="Efecto Afrodisiaco"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Efecto afrodisiaco]]></category>
+            #		<category gesioid="91" ref="Clima Erotico"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Clima erótico]]></category>
+            #		<category gesioid="88" ref="100% comestibles"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|100% comestibles]]></category>
+            #		<category gesioid="77" ref="Aceites y Cremas de masaje"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje]]></category>
+            #	</categories>
+            try:
+                if prod.find('categories'):
+                    for catego in prod.find('categories'):
+                        cat_ppal = catego.attrib['ref']
+                        gesioid_ppal = catego.attrib['gesioid']  
+                        parent = None
+                        cat_jerarquia = catego.find('category').text
+                        for cat_name in cat_jerarquia.split('|'):
+                            if cat_name:
+                                try:
+                                    cat = Category.objects.get(name=cat_name, parent=parent)
+                                    encontrado=encontrado+1
+                                except ObjectDoesNotExist as e: 
+                                    #Nuevo añadido                
+                                    cat = Category(name=cat_name, slug=slugify(cat_name), parent=parent)
+                                    cat.save()
+                                    nuevo=nuevo+1   
+                                parent = cat 
+                        #<brand><![CDATA[REALROCK 100% FLESH]]></brand> 
+                        #CAT PPAL
+                        cat.gesioid = gesioid_ppal
+                        cat.save()
+                        #ASOCIAR A PRODUCTO
+                        try:
+                            p = Product.objects.get(ref=ref)
+                            if p:
+                                p.category = cat
+                                p.save()
+                            else:
+                                error=error+1
+                        except ObjectDoesNotExist as e:
+                            error=error+1   
+                else:
+                    error=error+1            
+            except:
+                error=error+1    
+            n=n+1 
+        else:
+            break              
+    return {
+        'retorno': nuevo, 
+        'salida': '<br> Productos Procesados: '+str(n)
+            +'<br> Categorias Encontradas: '+str(encontrado)
+            +'<br> Nuevos: '+str(nuevo)
+            +'<br> Actualizadas: '+str(actualizado)
+            +'<br> Errores: '+str(error)
+            +'<br> Total: '+str(encontrado+nuevo)
+        }
+        
+
+def externo_procesar_categorias(request, pk):
+    externo = get_object_or_404(Externo, pk=pk)
+    tree=ET.parse(externo.path())
+    root=tree.getroot() 
+    salida = procesar_categorias(root)
+    externo.n_categorias = Categoria.objects.all().count()
     externo.save()
     return render(request, 'shop/externo_detail.html',{
         'externo': externo,

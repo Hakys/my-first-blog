@@ -38,62 +38,51 @@ class Imagen_gen(models.Model):
 #   <category gesioid="129" ref="Especial Gays"><![CDATA[Juguetes XXX|Especial Gays]]></category>
 #   <category gesioid="7" ref="Anal"><![CDATA[Juguetes XXX|Anal]]></category>
 #</categories>    
-
 class Category(models.Model):
-    name = models.CharField(max_length=128, blank=False)
-    slug = models.SlugField(max_length=128, blank=False)
-    activo = models.BooleanField(default=True)
-    gesioid = models.IntegerField(unique=True, null=True) 
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, related_name='super_category')
+    name = models.CharField(max_length = 150, blank=False)
+    slug = models.SlugField(max_length = 150, blank=False)
+    activo = models.BooleanField(default = True)
+    gesioid = models.IntegerField(unique = True, null = True) 
+    parent = models.ForeignKey('self', on_delete = models.SET_NULL, null = True, related_name = 'super_category')
      
     def __str__(self):  
-        return self.name
-
-    class Meta:
-        ordering = ('name',)
-        verbose_name_plural = 'Categorias'  
-        unique_together = ('slug', 'parent',)
-
-''' 
-    image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
-
         if self.activo: 
             activo='Si' 
         else: 
-            activo='No'                          
+            activo='No'         
         full_path = [self.name+' ('+activo+')']                  
         k = self.parent                          
         while k is not None:
             full_path.append(k.name)
             k = k.parent
-        return ' -> '.join(full_path[::-1])
-        
-    class Meta:
-        unique_together = ('slug', 'parent',)
-        verbose_name_plural = "categorias"       #categories under a parent with same slug 
+        return ' >> '.join(full_path[::-1])   
 
-    def __str__(self): 
-        if self.activo: 
-            activo='Si' 
-        else: 
-            activo='No'                          # __str__ method elaborated later in
-        full_path = [str(self.gesioid)+' '+self.name+' ('+activo+')']                  # post.  use __unicode__ in place of
-                                                 # __str__ if you are using python 2
-        k = self.parent                          
+    class Meta:
+        ordering = ('name',)
+        verbose_name_plural = 'Categorias'  
+        unique_together = ('slug', 'parent',)
+    
+    def get_cat_list(self, separador):
+        k = self.parent
+        breadcrumb = ["dummy"]
         while k is not None:
-            full_path.append(k.name)
+            breadcrumb.append(k.slug)
             k = k.parent
-        return ' -> '.join(full_path[::-1])
-'''
+
+        for i in range(len(breadcrumb)-1):
+            breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
+        return breadcrumb[-1:0:-1]
+
+#image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
 
 #<brand><![CDATA[REALROCK 100% FLESH]]></brand>
 #<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
 class Fabricante(models.Model):
-    name = models.CharField(max_length=50, unique=True) 
-    slug = models.SlugField(max_length=200)
-    activo = models.BooleanField(default=True)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='children')
-    image = models.ForeignKey(Imagen_gen, on_delete=models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length = 150, blank=False) 
+    slug = models.SlugField(max_length = 150, blank=False)
+    activo = models.BooleanField(default = True)
+    parent = models.ForeignKey('self', on_delete = models.CASCADE, null = True, related_name = 'children')
+    image = models.ForeignKey(Imagen_gen, on_delete = models.CASCADE, blank = True, null = True)
 
     def __str__(self):  
         if self.activo: 
@@ -105,7 +94,7 @@ class Fabricante(models.Model):
         while k is not None:
             full_path.append(k.name)
             k = k.parent
-        return ' -> '.join(full_path[::-1])    
+        return ' >> '.join(full_path[::-1])    
     
     class Meta:
         unique_together = ('slug', 'parent',)
@@ -125,13 +114,13 @@ class Fabricante(models.Model):
         return breadcrumb[-1:0:-1]
 
 class Product(models.Model): 
-    slug = models.SlugField(max_length=200, unique=True, null=False)
-    portada = models.ForeignKey(Imagen_gen, on_delete=models.CASCADE, blank=True, null=True)
-    ref = models.CharField(max_length=20, unique=True)
-    title = models.CharField(max_length=200) 
-    description = models.TextField(blank=True, null=True)
-    html_description = models.TextField(blank=True, null=True)		
-    product_url = models.URLField(blank=True)
+    slug = models.SlugField(max_length=150, unique=True, null=False)
+    portada = models.ForeignKey(Imagen_gen, on_delete=models.CASCADE,  null=True)
+    ref = models.CharField(max_length=30, null=False, unique=True)
+    title = models.CharField(max_length=150,  blank=False) 
+    description = models.TextField(null=True, blank=True)
+    html_description = models.TextField(null=True, blank=True)		
+    product_url = models.URLField(max_length=200, null=True, blank=True)
 
     updated = models.DateTimeField('Última Actualización', default=timezone.now)
     created_date = models.DateTimeField(default=timezone.now)
@@ -192,9 +181,10 @@ class Product(models.Model):
 	#published_date = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        if self.get_fab_list(' -> '):
-            fab_list = ' {0}'.format(self.get_fab_list(' -> '))
-        return self.ref+fab_list+' ('+str(self.updated)+')'
+        #fab_list = ''
+        #if self.get_fab_list(' -> '):
+        fab_list = ' {0}'.format(self.get_fab_list(' -> '))
+        return '{0}{1} ({2})'.format(self.ref,fab_list,self.updated)
     
     class Meta:
         ordering = ('-release_date',)
