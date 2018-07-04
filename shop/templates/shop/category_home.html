@@ -1,25 +1,20 @@
 {% extends 'shop/base.html' %}
 {% load static %}
-{% block title %}Categorías{% endblock %}
+{% block title %}{{title}}{% endblock %}
 {% block navbar %}
     {% include 'shop/navbar.html' %}
 {% endblock %}
 {% block content %}
-    <div class="col-lg-3">
-        <h2 class="my-4 text-center">Categorías</h1>
-        <div class="list-group pr-2">
-            <a href="#" class="list-group-item">link 1</a>
-            <a href="#" class="list-group-item">link 2</a>
-        </div>    
+    <div class="col-lg-3">  
+        <div class="row">
+            {% include 'shop/category_list.html' %}
+        </div>
+        <!-- /.row -->
     </div>
     <!-- /.col-lg-3 -->  
     <div class="col-lg-9"> 
         <div class="row">
-            {% if fichas %}
-                {% include 'shop/fabricante_grid.html' %}
-            {% else %}
-                <h4>· No Resultados ·</h4>
-            {% endif %}
+            {% include 'shop/category_grid.html' %}
         </div>
         <!-- /.row -->
     </div>

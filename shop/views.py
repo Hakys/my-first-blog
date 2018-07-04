@@ -54,14 +54,6 @@ def index(request):
         'fabricantes' : Fabricante.objects.filter(parent=None),
     })
 
-''' #####   CATEGORY   ##### '''
-
-def category_home(request):
-    fichas = Fabricante.objects.filter(parent=None)
-    return render(request,"shop/category_home.html",{
-        'fichas': fichas,
-    })
-
 ''' #####   PRODUCTOS   ##### '''
 
 def product_list(request):
@@ -206,6 +198,7 @@ def product_actualizar(request, slug):
         salida.append(procesar_productos(root))
         salida.append(procesar_fabricantes(root))  
         salida.append(procesar_imagenes(root))
+        salida.append(procesar_categorias(root))
     return product_detail_slug(request, slug, salida)
 
 def product_borrar(request, slug):
@@ -252,7 +245,7 @@ def externo_detail(request, pk):
     externo.n_productos = Product.objects.all().count()
     externo.n_fabricantes = Fabricante.objects.all().count()
     externo.n_imagenes = Imagen.objects.all().count()
-    #externo.n_categorias = len(Categoria.objects.all())
+    externo.n_categorias = Category.objects.all().count()
     externo.save()
     return render(request, 'shop/externo_detail.html', {
         'externo': externo,
@@ -306,19 +299,22 @@ def externo_cron(request):
         if not procesar_productos(root).get('retorno'): 
             if not procesar_fabricantes(root).get('retorno'): 
                 if not procesar_imagenes(root).get('retorno'):  
-                    ext.importar()
-                    ext.save()
-                    salida=0
+                    if not procesar_imagenes(root).get('retorno'):  
+                        ext.importar()
+                        ext.save()
+                        salida=0
+                    else:
+                        salida=-1
                 else:
-                    salida=-1
+                    salida=-2
             else:
-                salida=-2
+                salida=-3
         else:
-            salida=-3
-        ext.n_productos = len(Product.objects.all())
-        ext.n_fabricantes = len(Fabricante.objects.all())
-        ext.n_imagenes = len(Imagen.objects.all())
-        #externo.n_categorias = len(Categoria.objects.all())
+            salida=-4
+        ext.n_productos = Product.objects.all().count()
+        ext.n_fabricantes = Fabricante.objects.all().count()
+        ext.n_imagenes = Imagen.objects.all().count()
+        ext.n_categorias = Category.objects.all().count()
         ext.save()
         '''
         context = {
@@ -329,8 +325,8 @@ def externo_cron(request):
         return render(request, 'shop/externo_detail.html', context) 
         '''
     else:
-        salida=-4
-    return HttpResponse({'Error nivel:',salida})
+        salida=-5
+    return HttpResponse({'Nivel de ERROR: ',salida})
 
 def procesar_productos(root,insertar=False):
     if root:
@@ -555,20 +551,20 @@ def procesar_fabricantes(root):
                 try:
                     if prod.find('brand_hierarchy').text:
                         fabricante_jerarquia = prod.find('brand_hierarchy').text  
-                        parent = Null
+                        parent = None
                         for fab_name in fabricante_jerarquia.split('|'):
                             if fab_name:
                                 name=fab_name
                             else:
                                 name = 'DIABLA ROJA'
                                 error=error+1
-                            parent_ppal=parent
+                            parent_ppal = parent
                             try:
                                 fab = Fabricante.objects.get(name=name, parent=parent)
                                 encontrado=encontrado+1
                             except ObjectDoesNotExist as e: 
                                 #Nuevo añadido                
-                                fab = Fabricante(name=name, slug=slugify(name), parent=parent)
+                                fab = Fabricante(name=name, slug=slugify(name), parent=parent_ppal)
                                 fab.save()
                                 nuevo=nuevo+1   
                             parent = fab
@@ -578,21 +574,25 @@ def procesar_fabricantes(root):
                 try:
                     if prod.find('brand').text:
                         fab_name = prod.find('brand').text
+                    else:
+                        fab_name = 'DIABLA ROJA'
+                        parent_ppal = None
                 except:
                     fab_name = 'DIABLA ROJA' 
+                    parent_ppal = None
                     error=error+1
                 try:
-                    fab = Fabricante.objects.get(name=fab_name)
+                    fab = Fabricante.objects.get(name=fab_name, parent=parent_ppal)
                     encontrado=encontrado+1
                 except ObjectDoesNotExist as e: 
                     #Nuevo añadido                
-                    fab = Fabricante(name=fab_name, slug=fab_name, parent=parent_ppal)
-                    fab.save()
-                    nuevo=nuevo+1   
+                    fab = Fabricante(name=fab_name, slug=fab_name, parent=parent_ppal) 
+                    fab.save() 
+                    nuevo=nuevo+1  
                 try:
                     p = Product.objects.get(ref=ref)
                     if p:
-                        p.fabricante = Fabricante.objects.get(pk=fab.pk)
+                        p.fabricante = fab
                         p.save()
                     else:
                         error=error+1
@@ -632,13 +632,14 @@ def externo_procesar_fabricantes(request, pk):
 def procesar_categorias(root):
     if not root:
         return { 'retorno':-1, 'salida': "no root" }
-    limite=int(Configuracion.objects.get(variable='categoria_limite').valor)
+    limite=int(get_object_or_404(Configuracion, variable='categoria_limite').valor)
+    varios=get_object_or_404(Category, name='Varios', parent=None)
     n=0
     nuevo=0
     encontrado=0
     actualizado=0
     error=0
-    for prod in root.findall('product'):        
+    for prod in root.findall('product'):   
         if nuevo<limite: 
             ref = prod.find('public_id').text
             #<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
@@ -649,43 +650,77 @@ def procesar_categorias(root):
             #		<category gesioid="88" ref="100% comestibles"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|100% comestibles]]></category>
             #		<category gesioid="77" ref="Aceites y Cremas de masaje"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje]]></category>
             #	</categories>
-            try:
-                if prod.find('categories'):
-                    for catego in prod.find('categories'):
-                        cat_ppal = catego.attrib['ref']
-                        gesioid_ppal = catego.attrib['gesioid']  
-                        parent = None
-                        cat_jerarquia = catego.find('category').text
-                        for cat_name in cat_jerarquia.split('|'):
-                            if cat_name:
-                                try:
-                                    cat = Category.objects.get(name=cat_name, parent=parent)
-                                    encontrado=encontrado+1
-                                except ObjectDoesNotExist as e: 
-                                    #Nuevo añadido                
-                                    cat = Category(name=cat_name, slug=slugify(cat_name), parent=parent)
-                                    cat.save()
-                                    nuevo=nuevo+1   
-                                parent = cat 
-                        #<brand><![CDATA[REALROCK 100% FLESH]]></brand> 
-                        #CAT PPAL
-                        cat.gesioid = gesioid_ppal
-                        cat.save()
-                        #ASOCIAR A PRODUCTO
-                        try:
-                            p = Product.objects.get(ref=ref)
-                            if p:
-                                p.category = cat
-                                p.save()
-                            else:
-                                error=error+1
-                        except ObjectDoesNotExist as e:
-                            error=error+1   
-                else:
-                    error=error+1            
-            except:
-                error=error+1    
-            n=n+1 
+            if prod.find('categories'):
+                for categoria in prod.find('categories'):                    
+                    cat_jerarquia = categoria.text
+                    parent=None
+                    for cat_name in cat_jerarquia.split('|'):
+                        parent_ppal=parent
+                        if cat_name:
+                            try:
+                                cat = Category.objects.get(name=cat_name, parent=parent)
+                                encontrado=encontrado+1
+                            except ObjectDoesNotExist as e: 
+                                #Nuevo añadido                
+                                cat = Category(name=cat_name, slug=slugify(cat_name), parent=parent)
+                                cat.save()
+                                nuevo=nuevo+1 
+                            parent = cat       
+                    #name_ppal = categoria.attrib['ref']             
+                    cat.gesioid = categoria.attrib['gesioid']
+                    cat.save() 
+                try:
+                    p = Product.objects.get(ref=ref)
+                    if p:
+                        p.category = cat
+                        p.save()
+                    else:
+                        error=error+1
+                except ObjectDoesNotExist as e:
+                    error=error+1
+            ''' #ET.dump(cat_jerarquia)
+            for catego in prod.find('categories'):
+                cat_jerarquia = catego.find('category')
+                cat_ppal = cat_jerarquia.attrib['ref']
+                gesioid_ppal = catego.attrib['gesioid']  
+                parent = None
+                .text
+                cat_jerarquia = catego.find('category').text
+                if cat_jerarquia:                    
+                    for cat_name in cat_jerarquia.split('|'):
+                        print(cat_name)
+                        if cat_name:
+                            try:
+                                cat = Category.objects.get(name=cat_name, parent=parent)
+                                encontrado=encontrado+1
+                            except ObjectDoesNotExist as e: 
+                                #Nuevo añadido                
+                                cat = Category(name=cat_name, slug=slugify(cat_name), parent=parent)
+                                cat.save()
+                                nuevo=nuevo+1  
+                            cat.gesioid = gesioid_ppal
+                            cat.save() 
+                            parent = cat
+                #<brand><![CDATA[REALROCK 100% FLESH]]></brand> 
+                #CAT PPAL
+                
+                ''
+                ASOCIAR A PRODUCTO
+                try:
+                    p = Product.objects.get(ref=ref)
+                    if p:
+                        p.category = cat
+                        p.save()
+                    else:
+                        error=error+1
+                except ObjectDoesNotExist as e:
+                    error=error+1  
+                '' 
+            else:
+                error=error+1               
+             
+            '''
+            n=n+1
         else:
             break              
     return {
@@ -697,14 +732,13 @@ def procesar_categorias(root):
             +'<br> Errores: '+str(error)
             +'<br> Total: '+str(encontrado+nuevo)
         }
-        
 
 def externo_procesar_categorias(request, pk):
     externo = get_object_or_404(Externo, pk=pk)
     tree=ET.parse(externo.path())
     root=tree.getroot() 
     salida = procesar_categorias(root)
-    externo.n_categorias = Categoria.objects.all().count()
+    externo.n_categorias = Category.objects.all().count()
     externo.save()
     return render(request, 'shop/externo_detail.html',{
         'externo': externo,
@@ -769,20 +803,27 @@ def product_reload(request):
 ''' #####   FABRICANTE   ##### '''
 
 def fabricante_home(request):
-    fichas = Fabricante.objects.filter(parent=None)
+    #fabricante_list
+    fichas_list = Fabricante.objects.filter(parent=None)
+    #fabricante_grid
+    destacadas = {"DIABLA ROJA","BAILE","PIPEDREAMS", "LELO", "BATHMATE",}
+    fichas = Fabricante.objects.filter(name__in=destacadas,parent=None)
     return render(request,"shop/fabricante_home.html",{
+        'title': 'Fabricantes y Marcas',
+        'fichas_list':  fichas_list,
         'fichas': fichas,
     })
 
 def fabricante_list(request):
     fichas = Fabricante.objects.filter(parent=None)
     return render(request,"shop/fabricante_list.html",{
-        'fichas': fichas,
+        'fichas_list': fichas,
     })
 
 def fabricante_detail(request,slug):
     prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
-    fabricantes = Fabricante.objects.all().order_by('name')
+    fichas_list = Fabricante.objects.filter(parent=None)
+    fabricantes = Fabricante.objects.all()
     fabricante_slug = slug.split('/')
     fabricante_queryset = list(fabricantes)
     all_slugs = [ x.slug for x in fabricante_queryset ]
@@ -790,27 +831,91 @@ def fabricante_detail(request,slug):
     for slug in fabricante_slug:
         if slug in all_slugs:
             parent = get_object_or_404(Fabricante,slug=slug,parent=parent)
+    
     breadcrumbs_link = parent.get_fab_list('/')
-    #breadcrumbs_link.append(slug)
-    #print(breadcrumbs_link)
     fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
     breadcrumbs = zip(breadcrumbs_link, fabricante_name)
     sub_fabricantes = parent.children.all()
+
     #fichas = Imagen.objects.filter(preferred=True, product_id__fabricante_slug__in=breadcrumbs_link).order_by('-product_id__updated')
     #fichas_prod = Product.objects.filter(fabricante__in=sub_fabricantes)
+
     fichas_prod = Imagen.objects.filter(
         Q(preferred=True),
-        Q(product_id__fabricante__in=sub_fabricantes)|Q(product_id__fabricante=parent)).order_by('-product_id__release_date','product_id__fabricante__name')
+        Q(product_id__fabricante=parent)|Q(product_id__fabricante__in=sub_fabricantes)).order_by('-product_id__release_date','product_id__fabricante__name')
+    print('OUT: {0} {1}'.format(parent,fichas_prod))
     paginator = Paginator(fichas_prod, prod_page)
     page = request.GET.get('page')
     fichas_prod_paginado = paginator.get_page(page)
-    return render(request, "shop/fabricante_detail.html", {  
+    return render(request, "shop/fabricante_detail.html", { 
+        'fichas_list': fichas_list, 
         'hoy': datetime.today(), 
         'breadcrumbs': breadcrumbs,  
         'ficha': parent,
         'sub_fabricantes': sub_fabricantes, 
         'fichas_prod': fichas_prod_paginado,
     })
+
+''' #####   CATEGORY   ##### '''
+
+def category_home(request):
+    #category_list
+    fichas_list = Category.objects.filter(parent=None)
+    #category_grid
+    destacadas = {"Varios","Ofertas","Para Hombre", "Para Mujer", "Para Parejas","Lista Negra",}
+    fichas = Category.objects.filter(name__in=destacadas,parent=None)
+    return render(request,"shop/category_home.html",{
+        'title': 'Categorías',
+        'fichas_list': fichas_list,
+        'fichas': fichas,
+    })
+
+def category_detail(request,slug):   
+    #category_list
+    fichas_list = Category.objects.filter(parent=None)
+    categorias = Category.objects.all()
+    category_slug = slug.split('/')
+    category_queryset = list(categorias)
+    all_slugs = [ x.slug for x in category_queryset ]
+    parent = None
+    for slug in category_slug:
+        if slug in all_slugs:
+            parent = get_object_or_404(Category,slug=slug,parent=parent)
+    breadcrumbs_link = parent.get_cat_list('/')
+    category_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
+    breadcrumbs = zip(breadcrumbs_link, category_name)
+    sub_categorias = parent.children.all()
+    
+    #fichas = Imagen.objects.filter(preferred=True, product_id__fabricante_slug__in=breadcrumbs_link).order_by('-product_id__updated')
+    #fichas_prod = Product.objects.filter(fabricante__in=sub_fabricantes)
+    fichas_prod = Imagen.objects.filter(
+        Q(preferred=True),
+        Q(product_id__category__in=sub_categorias)|Q(product_id__category=parent)).order_by('-product_id__release_date','product_id__category__name')
+    prod_page=Configuracion.objects.get(variable='prod_page').get_valor_int()
+    paginator = Paginator(fichas_prod, prod_page)
+    page = request.GET.get('page')
+    fichas_prod_paginado = paginator.get_page(page)
+    return render(request, "shop/category_detail.html", {  
+        'title': 'Categorías',
+        'fichas_list': fichas_list,
+        'hoy': datetime.today(), 
+        'breadcrumbs': breadcrumbs,  
+        'ficha': parent,
+        'sub_categorias': sub_categorias, 
+        'fichas_prod': fichas_prod_paginado,
+    })
+
+def category_detail_pk(request, pk, salida=[]):    
+    try:
+        category = Category.objects.get(pk=pk)
+    except Category.DoesNotExist:
+        #raise Http404("Product does not exist")
+        salida.append({
+            'retorno': -1,
+            'salida': "Producto No Encontrado"
+            })
+        return category_home(request, salida)
+    return category_detail(request, category.slug, salida)
 
 ''' #####   USERPROFILE   ##### '''
 

@@ -2,10 +2,10 @@
 <div class="center_column col-xs-12" >
     <div class="row">
         {% for ficha in fichas %}
-            <div class="col-lg-2 mb-3 pr-0">
+            <div class="col-lg-2 mb-2 p-1">
                 <div class="card">
-                    <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
-                        <img class="card-img-top mt-1" 
+                    <a href="{% url 'category_detail' slug=ficha.slug %}">
+                        <img class="card-img-top mt-3" 
                         {% if ficha.image.url %}
                             src="{{ ficha.image.url }}" 
                         {% else %}
@@ -16,12 +16,9 @@
                             <h6 class="card-title">{{ ficha.name }}</h6>
                         </div>
                     </a>
-                    <div class="card-body">
-                        <p class="card-text text-right">
-                            <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
-                                35 productos
-                            </a>
-                        </p>
+                    <div class="card-body text-right">
+                        <a href="{% url 'category_detail' slug=ficha.slug %}">
+                        28 Productos</a>
                     </div>
                 </div>
             </div>

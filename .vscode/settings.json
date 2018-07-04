@@ -1,4 +1,14 @@
 {
     "python.pythonPath": "${workspaceFolder}\\myvenv\\Scripts\\python.exe",
-    "python.linting.enabled": false
+    "python.linting.enabled": false,
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        ".",
+        "-p",
+        "*_test.py"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true
 }

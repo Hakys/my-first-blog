@@ -52,6 +52,7 @@ def populate():
     ]
 
     shop_categories = [
+        {"name": "Varios", "parent": None},
         {"name": "Ofertas", "parent": None},
         {"name": "Para Hombre", "parent": None},
         {"name": "Para Mujer", "parent": None},
@@ -68,6 +69,11 @@ def populate():
     # http://docs.quantifiedcode.com/python-anti-patterns/readability/
     # for more information about how to iterate over a dictionary properly.
     
+    print(' Configuración Antes: {0}'.format(Configuracion.objects.all().count()))
+    print(' Fabricantes   Antes: {0}'.format(Fabricante.objects.all().count()))
+    print(' Categorías    Antes: {0}'.format(Category.objects.all().count()))
+
+    print("Processing Shop population script...")
     for c in shop_configuracions:
         add_configuracion(c["variable"],c["valor"],c["activo"])
     
@@ -84,8 +90,12 @@ def populate():
     #for f in Fabricante.objects.all():
     #    print("{0} ".format(str(f)))
 
-    for cat in Category.objects.all():
-        print("{0} ".format(str(cat)))
+    #for cat in Category.objects.all():
+    #    print("{0} ".format(str(cat)))
+
+    print(' Configuración Después: {0}'.format(Configuracion.objects.all().count()))
+    print(' Fabricantes   Después: {0}'.format(Fabricante.objects.all().count()))
+    print(' Categorías    Después: {0}'.format(Category.objects.all().count()))
 
 def add_configuracion(variable, valor, activo=True):
     obj = Configuracion.objects.get_or_create(variable=variable)[0]

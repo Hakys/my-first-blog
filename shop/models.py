@@ -43,7 +43,7 @@ class Category(models.Model):
     slug = models.SlugField(max_length = 150, blank=False)
     activo = models.BooleanField(default = True)
     gesioid = models.IntegerField(unique = True, null = True) 
-    parent = models.ForeignKey('self', on_delete = models.SET_NULL, null = True, related_name = 'super_category')
+    parent = models.ForeignKey('self', on_delete = models.SET_NULL, null = True, related_name = 'children')
      
     def __str__(self):  
         if self.activo: 
@@ -100,15 +100,14 @@ class Fabricante(models.Model):
         unique_together = ('slug', 'parent',)
         ordering = ('name',)
         verbose_name = "Fabricante"
-        verbose_name_plural = "Marcas"
+        verbose_name_plural = "Fabricantes y Marcas"
 
     def get_fab_list(self, separador):
         k = self.parent
-        breadcrumb = ["dummy"]
+        breadcrumb = ['']
         while k is not None:
             breadcrumb.append(k.slug)
             k = k.parent
-
         for i in range(len(breadcrumb)-1):
             breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
         return breadcrumb[-1:0:-1]
@@ -116,7 +115,7 @@ class Fabricante(models.Model):
 class Product(models.Model): 
     slug = models.SlugField(max_length=150, unique=True, null=False)
     portada = models.ForeignKey(Imagen_gen, on_delete=models.CASCADE,  null=True)
-    ref = models.CharField(max_length=30, null=False, unique=True)
+    ref = models.CharField(max_length=50, null=False, unique=True)
     title = models.CharField(max_length=150,  blank=False) 
     description = models.TextField(null=True, blank=True)
     html_description = models.TextField(null=True, blank=True)		
@@ -140,7 +139,7 @@ class Product(models.Model):
     unit_of_measurement = models.CharField(max_length=20, blank=True)
     pvp = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
-    fabricante = models.ForeignKey(Fabricante, on_delete=models.SET_NULL, null=True)
+    fabricante = models.ForeignKey(Fabricante, on_delete=models.SET_NULL, null=True, related_name='fabricante')
 
     #<stock><location path="General">50</location></stock>
     stock = models.IntegerField(default=0)
@@ -225,7 +224,7 @@ class Imagen(models.Model):
     title = models.CharField(max_length=200, blank=True, null=True)
     name = models.CharField(max_length=200, blank=True, null=True)
     ref = models.CharField(max_length=20, blank=True)
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
+    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, null=False, related_name='album')
     #img = models.ImageField(storage=fs)
     src = models.URLField(unique=True)
     url = models.URLField(blank=True)

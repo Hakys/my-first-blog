@@ -24,7 +24,6 @@
                         <h5 class="text-right mb-0 float-right">{{ ficha.product_id.price }} €</h5>
                     </div>
                     <div class="card-footer p-1">
-
                         {% if ficha.product_id.release_date >= hoy %}
                             {% if ficha.product_id.new %} Nuevo
                                 Próxim. {{ ficha.product_id.release_date|date:"d/m/Y" }} 

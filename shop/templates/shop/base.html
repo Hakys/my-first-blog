@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-{% load staticfiles %}
+{% load static %}
 <html lang="es">
 <head>
     <meta charset="utf-8">
@@ -29,7 +29,6 @@
 			<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
 			<strong>{{s.retorno}} </strong>{{s.salida|safe}}
 		</div>
-	{% empty %}
 	{% endfor%}
 	
 	<!-- Page Content -->

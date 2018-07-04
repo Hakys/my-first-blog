@@ -1,9 +1,9 @@
 {% load static %}
-<h4 class="my-4 w-100 text-center">
-    <a href="{% url 'fabricante_home' %}">{{title}}</a></h4>
+<h2 class="my-4 w-100 text-center">
+    <a href="{% url 'category_home' %}">{{title}}</a></h2>
 <div class="list-group pr-2">
     {% for ficha in fichas_list %}
-        <a href="{% url 'fabricante_detail' slug=ficha.slug %}" class="list-group-item p-0 pr-2">
+        <a href="{% url 'category_detail' slug=ficha.slug %}" class="list-group-item p-0 pr-1">
             <img class="img-responsive w-30" width="30" 
                 {% if ficha.image.url %}
                     src="{{ ficha.image.url }}" 
@@ -11,7 +11,7 @@
                     src="{% static 'img/no-foto.jpg' %}"
                 {% endif %}
                     alt="{{ ficha.name }}" title="{{ ficha.name }}">
-            {{ ficha.name | upper }}
+            {{ ficha.name }}
         </a>
     {% empty %}
         <h4>· No hay {{title}} ·</h4>

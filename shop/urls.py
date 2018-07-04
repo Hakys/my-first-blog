@@ -48,6 +48,8 @@ urlpatterns = [
     url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'),   
     
     url(r'^cat/$', views.category_home, name='category_home'),
+    url(r'^cat/(?P<pk>[0-9]+)/$', views.category_detail_pk, name='category_detail_pk'),
+    url(r'^cat/(?P<slug>.+)/$', views.category_detail, name='category_detail'),
     
     url(r'^restricted/', views.user_restricted, name='restricted'),
     url(r'^myprofile/', views.user_myprofile, name='myprofile'),
@@ -65,7 +67,7 @@ urlpatterns = [
     #url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'), 
 
 
-#    
+#   http://www.apuntes-web.es/tag/bootstrap/
 #   https://getbootstrap.com/docs/4.0/
 #   https://www.w3schools.com/bootstrap4/
 #   https://getbootstrap.com/docs/3.3/customize/
