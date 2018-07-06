@@ -1,7 +1,10 @@
+import sys
+import traceback
+import xml.etree.ElementTree as ET
 from .models import *
 from .forms import *
-from decimal import *
 from datetime import datetime
+from decimal import *
 from time import time
 from django.conf import settings
 from django.contrib.auth import *
@@ -19,9 +22,6 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.dateparse import parse_datetime
 from urllib.request import Request, urlopen, URLError, HTTPError  
-import sys
-import traceback
-import xml.etree.ElementTree as ET
 
 def init_loadfile(request):
     salida=[]   #{'retorno': 0,'salida': "no error"}
@@ -48,10 +48,12 @@ def init_loadfile(request):
 def index(request):
     # Call function to handle the cookies
     visitor_cookie_handler(request)
-
     return render(request,"shop/index.html", { 
-        'visits': request.session['visits'],   
-        'fabricantes' : Fabricante.objects.filter(parent=None),
+        'visits': request.session['visits'],
+        'title_cat_list': 'Categorías',
+        'fichas_cat_list': Category.objects.filter(parent=None),
+        'title_fab_select': 'Fabricantes y Marcas', 
+        'fichas_fab_select' : Fabricante.objects.filter(parent=None),
     })
 
 ''' #####   PRODUCTOS   ##### '''
@@ -814,12 +816,6 @@ def fabricante_home(request):
         'fichas': fichas,
     })
 
-def fabricante_list(request):
-    fichas = Fabricante.objects.filter(parent=None)
-    return render(request,"shop/fabricante_list.html",{
-        'fichas_list': fichas,
-    })
-
 def fabricante_detail(request,slug):
     prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
     fichas_list = Fabricante.objects.filter(parent=None)
@@ -843,11 +839,12 @@ def fabricante_detail(request,slug):
     fichas_prod = Imagen.objects.filter(
         Q(preferred=True),
         Q(product_id__fabricante=parent)|Q(product_id__fabricante__in=sub_fabricantes)).order_by('-product_id__release_date','product_id__fabricante__name')
-    print('OUT: {0} {1}'.format(parent,fichas_prod))
+    #print('OUT: {0} {1}'.format(parent,fichas_prod))
     paginator = Paginator(fichas_prod, prod_page)
     page = request.GET.get('page')
     fichas_prod_paginado = paginator.get_page(page)
     return render(request, "shop/fabricante_detail.html", { 
+        'title': 'Fabricantes y Marcas',
         'fichas_list': fichas_list, 
         'hoy': datetime.today(), 
         'breadcrumbs': breadcrumbs,  
@@ -880,7 +877,16 @@ def category_detail(request,slug):
     parent = None
     for slug in category_slug:
         if slug in all_slugs:
-            parent = get_object_or_404(Category,slug=slug,parent=parent)
+            #parent = get_object_or_404(Category,slug=slug,parent=parent)
+            try:
+                parent = Category.objects.get(slug=slug,parent=parent)
+            except Category.DoesNotExist:
+                #raise Http404("Product does not exist")
+                salida.append({
+                    'retorno': -1,
+                    'salida': "Categoría No Encontrada"
+                    })
+                return category_home(request, salida)
     breadcrumbs_link = parent.get_cat_list('/')
     category_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
     breadcrumbs = zip(breadcrumbs_link, category_name)
@@ -905,18 +911,6 @@ def category_detail(request,slug):
         'fichas_prod': fichas_prod_paginado,
     })
 
-def category_detail_pk(request, pk, salida=[]):    
-    try:
-        category = Category.objects.get(pk=pk)
-    except Category.DoesNotExist:
-        #raise Http404("Product does not exist")
-        salida.append({
-            'retorno': -1,
-            'salida': "Producto No Encontrado"
-            })
-        return category_home(request, salida)
-    return category_detail(request, category.slug, salida)
-
 ''' #####   USERPROFILE   ##### '''
 
 def some_view(request):
@@ -933,6 +927,58 @@ def user_restricted(request):
 def user_myprofile(request):
     return HttpResponse("Datos de Mi Perfil!")
 
+def register(request):
+    # A boolean value for telling the template
+    # whether the registration was successful.
+    # Set to False initially. Code changes value to
+    # True when registration succeeds.
+    registered = False
+    # If it's a HTTP POST, we're interested in processing form data.
+    if request.method == 'POST':
+        # Attempt to grab information from the raw form information.
+        # Note that we make use of both UserForm and UserProfileForm.
+        user_form = UserForm(data=request.POST)
+        profile_form = UserProfileForm(data=request.POST)
+        # If the two forms are valid...
+        if user_form.is_valid() and profile_form.is_valid():
+            # Save the user's form data to the database.
+            user = user_form.save()
+            # Now we hash the password with the set_password method.
+            # Once hashed, we can update the user object.
+            user.set_password(user.password)
+            user.save()
+            # Now sort out the UserProfile instance.
+            # Since we need to set the user attribute ourselves,
+            # we set commit=False. This delays saving the model
+            # until we're ready to avoid integrity problems.
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            # Did the user provide a profile picture?
+            # If so, we need to get it from the input form and
+            #put it in the UserProfile model.
+            if 'picture' in request.FILES:
+                profile.picture = request.FILES['picture']
+                # Now we save the UserProfile model instance.
+            profile.save()
+            # Update our variable to indicate that the template
+            # registration was successful.
+            registered = True
+        else:
+            # Invalid form or forms - mistakes or something else?
+            # Print problems to the terminal.
+            print(user_form.errors, profile_form.errors)
+    else:
+        # Not a HTTP POST, so we render our form using two ModelForm instances.
+        # These forms will be blank, ready for user input.
+        user_form = UserForm()
+        profile_form = UserProfileForm()
+        
+    # Render the template depending on the context.
+    return render(request, 'accounts/register.html',{
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'registered': registered,
+    })
 
 ''' #####   COOKIES   ##### '''
 

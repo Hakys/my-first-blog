@@ -17,6 +17,9 @@ urlpatterns = [
     url(r'^about/$', views.about, name='about'), 
     url(r'^templateshop/$', views.templateshop, name="templateshop"),
 
+    url(r'^cat/$', views.category_home, name='category_home'),
+    url(r'^cat/(?P<slug>.+)/$', views.category_detail, name='category_detail'),
+
 	url(r'^fab/$', views.fabricante_home, name='fabricante_home'),
     url(r'^fab/(?P<slug>.+)/$', views.fabricante_detail, name='fabricante_detail'),
 
@@ -47,25 +50,19 @@ urlpatterns = [
     url(r'^ext/(?P<pk>[0-9]+)/procesar_fabricantes/$', views.externo_procesar_fabricantes, name='externo_procesar_fabricantes'),   
     url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'),   
     
-    url(r'^cat/$', views.category_home, name='category_home'),
-    url(r'^cat/(?P<pk>[0-9]+)/$', views.category_detail_pk, name='category_detail_pk'),
-    url(r'^cat/(?P<slug>.+)/$', views.category_detail, name='category_detail'),
-    
     url(r'^restricted/', views.user_restricted, name='restricted'),
     url(r'^myprofile/', views.user_myprofile, name='myprofile'),
-    url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
+    url(r'^register/$', views.register, name='register'), 
 
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
     path('phpmyadmin/', RedirectView.as_view(url='http://localhost/phpmyadmin/db_structure.php?server=1&db=djangogirls&token=24b7ee8a1e9f702aa5a70f85fcc44d70'), name='phpmyadmin'),
    
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)    
-
-    #url(r'^register/$', views.user_register, name='user_register'),
-    #url(r'^login/$', views.user_login, name='user_login'),
-    #url(r'^logout/$', views.user_logout, name='user_logout'),
     
-    #url(r'^ext/(?P<pk>[0-9]+)/procesar_categorias/$', views.externo_procesar_categorias, name='externo_procesar_categorias'), 
-
+#   url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
+#   url(r'^register/$', views.user_register, name='user_register'),
+#   url(r'^login/$', views.user_login, name='user_login'),
+#   url(r'^logout/$', views.user_logout, name='user_logout'),    
 
 #   http://www.apuntes-web.es/tag/bootstrap/
 #   https://getbootstrap.com/docs/4.0/

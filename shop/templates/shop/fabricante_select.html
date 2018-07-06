@@ -1,0 +1,15 @@
+{% load static %}
+<div class="form-group pt-2">
+    <form>{% csrf_token %}
+        <label for="sel_marcas"><h5 class="my-4 w-100">
+            <a href="{% url 'fabricante_home' %}">{{ title_fab_select }}</a></h5></label>
+        {% if fichas_fab_select %}
+            <select class="form-control" id="sel_marcas" name="sel_marcas">
+                <option value="" selected>{{ title_fab_select }}</option>                    
+                {% for ficha in fichas_fab_select %}    
+                    <option value="{% url 'fabricante_detail' slug=ficha.slug %}">{{ ficha.name }}</option>
+                {% endfor %}
+            </select>
+        {% endif %}
+    </form>
+</div>

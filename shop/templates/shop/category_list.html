@@ -1,8 +1,8 @@
 {% load static %}
-<h2 class="my-4 w-100 text-center">
-    <a href="{% url 'category_home' %}">{{title}}</a></h2>
-<div class="list-group pr-2">
-    {% for ficha in fichas_list %}
+<h4 class="my-4 w-100">
+    <a href="{% url 'category_home' %}">{{title_cat_list}}</a></h4>
+<div class="col-12 list-group list-group-flush pr-2">
+    {% for ficha in fichas_cat_list %}
         <a href="{% url 'category_detail' slug=ficha.slug %}" class="list-group-item p-0 pr-1">
             <img class="img-responsive w-30" width="30" 
                 {% if ficha.image.url %}
@@ -14,7 +14,13 @@
             {{ ficha.name }}
         </a>
     {% empty %}
-        <h4>· No hay {{title}} ·</h4>
+        <h4>· No hay {{title_cat_list}} ·</h4>
     {% endfor %}
 </div>    
-
+<!--
+<div class="list-group">
+    <a href="#" class="list-group-item">Category 1</a>
+    <a href="#" class="list-group-item">Category 2</a>
+    <a href="#" class="list-group-item">Category 3</a>
+</div>
+-->

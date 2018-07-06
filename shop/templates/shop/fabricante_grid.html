@@ -2,7 +2,7 @@
 <div class="center_column col-xs-12" >
     <div class="row">
         {% for ficha in fichas %}
-            <div class="col-lg-2 mb-3 pr-0">
+            <div class="col-lg-2 mb-3 pr-1">
                 <div class="card">
                     <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
                         <img class="card-img-top mt-1" 
@@ -12,7 +12,7 @@
                             src="{% static 'img/no-foto.jpg' %}"
                         {% endif %}
                             alt="{{ ficha.name }}" title="{{ ficha.name }}">
-                        <div class="card-img-overlay p-1">
+                        <div class="card-img-overlay p-1 pr-2">
                             <h6 class="card-title">{{ ficha.name }}</h6>
                         </div>
                     </a>

@@ -217,6 +217,9 @@ class Product(models.Model):
         cost_price = Decimal(self.cost_price)
         coste_total=cost_price+cost_price*iva+cost_price*req
         self.pvp = round(coste_total/(1-porc_benef),2)
+        if self.recommended_retail_price > self.pvp:
+            self.pvp = self.recommended_retail_price
+        #self.save()
         return self.pvp
 
 #fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')  
