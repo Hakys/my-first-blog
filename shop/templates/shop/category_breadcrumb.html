@@ -1,0 +1,23 @@
+{% load static %}
+<div class="col-lg-12">
+    <h2 class="mb-2">
+        <ol class="breadcrumb" style="background-color:rgba(0, 0, 0, 0)">
+            <li class="breadcrumb-item">
+                <a href="{% url 'category_home' %}">{{ home_cat_breadcrumb | upper }}</a></li>
+            {% if cat_breadcrumbs %}
+                {% for slug,name in cat_breadcrumbs %}
+                    <li class="breadcrumb-item"><a href="{% url 'category_detail' slug=slug %}">{{ name | upper }}</a></li>
+                {% endfor %}
+            {% endif %}        
+            <li class="breadcrumb-item active">
+                <!--
+                {% if ficha.image.url %}
+                    <img src="{{ ficha.image.url }}" width="45px" height="45px">
+                {% else %}
+                    <img src="{% static 'img/no-foto.jpg' %}" alt="Sin Foto" width="45px" height="45px">
+                {% endif %}-->
+                    {{ficha.name | upper }}
+            </li>
+        </ol>
+    </h2>
+</div>

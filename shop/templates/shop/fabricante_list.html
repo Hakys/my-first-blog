@@ -1,6 +1,6 @@
 {% load static %}
 <h4 class="my-4 w-100 text-center">
-    <a href="{% url 'fabricante_home' %}">{{title}}</a></h4>
+    <a href="{% url 'fabricante_home' %}">{{title_fab_select}}</a></h4>
 <div class="list-group pr-2">
     {% for ficha in fichas_list %}
         <a href="{% url 'fabricante_detail' slug=ficha.slug %}" class="list-group-item p-0 pr-2">
@@ -14,7 +14,7 @@
             {{ ficha.name | upper }}
         </a>
     {% empty %}
-        <h4>· No hay {{title}} ·</h4>
+        <h4>· No hay {{title_fab_select}} ·</h4>
     {% endfor %}
 </div>    
 

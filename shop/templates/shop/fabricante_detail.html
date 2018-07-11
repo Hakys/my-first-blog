@@ -4,13 +4,18 @@
     {% include 'shop/navbar.html' %}
 {% endblock %}
 {% block content %}   
-<div class="col-lg-3">
-    {% if sub_fabricantes %}
-        <div class="row">
-            <h4>Marcas Asociadas</h4>
-            <div class="list-group pr-2 text-lg">
-                {% for ficha in sub_fabricantes %}
-                    <a href="{{ ficha.slug }}" class="list-group-item p-0">
+<div class="col-lg-3">    
+    <div class="row">
+        {% include 'shop/fabricante_select.html' %}
+    </div>
+    <!-- /.row -->
+    <h2 class="my-4 text-center">{{title}}</h2>
+    {% if fichas_fab_sub %}
+        <div class="row mt-4">
+            <h5 class="my-2 w-100">{{ title_fab_sub }}</h5>
+            <div class="list-group text-lg">
+                {% for ficha in fichas_fab_sub %}
+                    <a href="{{ ficha.slug }}" class="list-group-item p-0 pr-2">
                         <img class="img-responsive w-30" width="30" 
                             {% if ficha.image.url %}
                                 src="{{ ficha.image.url }}" 
@@ -23,10 +28,8 @@
                 {% endfor %}
             </div>    
         </div> 
+        <!-- /.row -->
     {% endif %}
-    <div class="row  mt-4">
-        {% include 'shop/fabricante_list.html' %}
-    </div>
 </div>
 <!-- /.col-lg-3 -->  
 <div class="col-lg-9"> 

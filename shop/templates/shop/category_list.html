@@ -1,6 +1,6 @@
 {% load static %}
-<h4 class="my-4 w-100">
-    <a href="{% url 'category_home' %}">{{title_cat_list}}</a></h4>
+<h5 class="my-4">
+    <a href="{% url 'category_home' %}">{{title_cat_list}}</a></h5>
 <div class="col-12 list-group list-group-flush pr-2">
     {% for ficha in fichas_cat_list %}
         <a href="{% url 'category_detail' slug=ficha.slug %}" class="list-group-item p-0 pr-1">

@@ -3,10 +3,10 @@
     <div class="row">
         <h5 class="my-2 w-100">{{ title_fab_grid }}</h5>
         {% for ficha in fichas_fab_grid %}
-            <div class="col-lg-2 mb-3 pr-1">
-                <div class="card">
+            <div class="col-lg-6 h-50 mb-3 pr-1">
+                <div class="card h-40">
                     <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
-                        <img class="card-img-top mt-1" 
+                        <img class="img-responsive mt-1 h-40" 
                         {% if ficha.image.url %}
                             src="{{ ficha.image.url }}" 
                         {% else %}
@@ -19,8 +19,8 @@
                     </a>
                     <div class="card-body">
                         <p class="card-text text-right">
-                            <a href="{% url 'fabricante_detail' slug=ficha.slug %}">
-                                35 productos
+                            <a href="{% url 'fabricante_detail' slug=ficha.slug %}"> 
+                                {{ ficha.fabricante.all.count }} productos
                             </a>
                         </p>
                     </div>

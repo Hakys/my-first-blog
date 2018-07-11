@@ -4,16 +4,16 @@
     {% include 'shop/navbar.html' %}
 {% endblock %}
 {% block content %}  
-    <div class="center_column col-xs-12" >  
+    <div class="row center_column " >  
+        <div class="row">
+            {% include 'shop/category_breadcrumb.html' %}            
+        </div>
         <div class="row">
             {% include 'shop/category_grid_h.html' %}
         </div>
     </div>
     <div class="row">
         <div class="col-lg-3">
-            <div class="row">
-                
-            </div>
             <div class="row">
                 {% include 'shop/category_list.html' %}
             </div>
@@ -28,7 +28,6 @@
                 <div class="row p-1 pr-4 d-inline">
                     {% include 'shop/product_grid.html' %} 
                 </div>
-                <!-- /.row -->
             {% endif %}
         </div>
         <!-- /.col-lg-9 -->

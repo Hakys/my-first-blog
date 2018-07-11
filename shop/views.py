@@ -19,8 +19,8 @@ from django.http import *
 from django.shortcuts import render, get_object_or_404, redirect, render_to_response
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.dateparse import parse_datetime
+from django.utils.text import slugify
 from urllib.request import Request, urlopen, URLError, HTTPError  
 
 def init_loadfile(request):
@@ -68,7 +68,8 @@ def product_list(request):
     return render(request, 'shop/product_list.html', {'todo':todo_paginado})
 
 def product_home(request, salida=[]):
-    fichas_prod = Imagen.objects.filter(preferred=True,product_id__release_date__gte=datetime.today()).order_by('-product_id__release_date')
+    #fichas_prod = Imagen.objects.filter(preferred=True,product_id__release_date__gte=datetime.today()).order_by('-product_id__release_date')
+    fichas_prod = Imagen.objects.filter(preferred=True).order_by('-product_id__release_date')
     return product_filtrados(request, 'Próximos Lanzamientos', fichas_prod, salida)
 
 def product_lanzamientos(request, salida=[]):
@@ -332,7 +333,7 @@ def externo_cron(request):
 
 def procesar_productos(root,insertar=False):
     if root:
-        limite=int(get_object_or_404(Configuracion, variable='product_limite').valor)
+        limite = Configuracion.objects.get(variable='product_limite').get_valor_int()
         iva_21 = Configuracion.objects.get(variable='iva').get_valor_dec()
         n=0
         nuevo=0
@@ -441,7 +442,7 @@ def externo_procesar_productos(request, pk):
         'salida': [salida],
     }) 
 
-def procesar_imagenes(root):
+def procesar_imagenes(root,insertar=False):
     if root:
         limite=int(Configuracion.objects.get(variable='imagen_limite').valor)
         n=0
@@ -452,58 +453,48 @@ def procesar_imagenes(root):
         procesada=0
         error_img=0
         actualizada=0
-        for prod in root.findall('product'):
-            if nuevo_img<limite:
-                ref = prod.find('public_id').text
-                updated = parse_datetime(prod.find('updated').text)
-                try:
-                    p = Product.objects.get(ref=ref)
-                    productos=productos+1
-                except ObjectDoesNotExist as e:
-                    p = None
-                    pass
-                if p:
-                    Imagen.objects.filter(ref=p.ref).delete()       
-                    for image in prod.find('images'):                    
-                        if Imagen.exist(image.find('src').text):
-                            src = image.find('src').text  
-                            try:
-                                img = Imagen.objects.get(src=src)
-                            except ObjectDoesNotExist as e:             
-                                img = Imagen(src=src)
-                            if img.ref:                                
-                                encontrada=encontrada+1
-                            else: 
-                                #Nueva imagen añadida 
-                                try:  
-                                    img.ref = p.ref
-                                    img.title = p.title      
-                                    if image.find('name').text :
-                                        img.name = p.title
-                                    else:
-                                        img.name = image.find('name').text
-                                    img.product_id = p
-                                    
-                                    img.url = image.find('src').text
-                                    img.preferred = image.get('preferred')
-                                    img.save()  
-                                    '''
-                                    if img.preferred:
-                                        p.portada = Imagen.objects.get(pk=img.pk) 
-                                        p.save()     
-                                    '''
-                                    nuevo_img=nuevo_img+1                     
-                                except IntegrityError as e:
-                                    print('ERROR REF: '+p.ref)  
-                                    print('ERROR SCR: '+image.find('src'))  
-                                    error_img=error_img+1 
-                                    pass             
-                        else:
-                            print(src+' NOT EXIST')
-                        procesada=procesada+1
+        for prod in root.findall('product'):            
+            ref = prod.find('public_id').text
+            #updated = parse_datetime(prod.find('updated').text)
+            try:
+                p = Product.objects.get(ref=ref)
+                productos=productos+1
+            except ObjectDoesNotExist as e:
+                p = None
+                pass
+            if p:                      
+                #Imagen.objects.filter(ref=p.ref).delete()       
+                for image in prod.find('images'): 
+                    src = image.find('src').text                   
+                    if (Imagen.exist(src) and not Imagen.objects.get(src=src)) or insertar: 
+                        img = Imagen(src=src)                            
+                        #Nueva imagen añadida 
+                        try:  
+                            img.ref = p.ref
+                            img.title = p.title      
+                            if not image.find('name').text:
+                                img.name = p.title
+                            else:
+                                img.name = image.find('name').text
+                            img.product_id = p
+                            
+                            img.url = image.find('src').text
+                            img.preferred = image.get('preferred')
+                            print('PREFERRED '+str(img.preferred))
+                            img.save()  
+
+                            nuevo_img=nuevo_img+1                     
+                        except IntegrityError as e:
+                            print('ERROR REF: '+p.ref)  
+                            print('ERROR SCR: '+image.find('src'))  
+                            error_img=error_img+1 
+                            pass             
+                    else:
+                        encontrada=encontrada+1
+                    procesada=procesada+1
                 n=n+1 
-            else:
-                    break               
+            if limite<nuevo_img:
+                break               
         return {
             'retorno': nuevo_img, 
             'salida': '<br> Productos Procesados: '+str(n)+' -> '+str(productos)
@@ -653,6 +644,10 @@ def procesar_categorias(root):
             #		<category gesioid="77" ref="Aceites y Cremas de masaje"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje]]></category>
             #	</categories>
             if prod.find('categories'):
+                try:
+                    p = Product.objects.get(ref=ref)
+                except ObjectDoesNotExist as e:
+                    error=error+1
                 for categoria in prod.find('categories'):                    
                     cat_jerarquia = categoria.text
                     parent=None
@@ -666,20 +661,22 @@ def procesar_categorias(root):
                                 #Nuevo añadido                
                                 cat = Category(name=cat_name, slug=slugify(cat_name), parent=parent)
                                 cat.save()
-                                nuevo=nuevo+1 
+                                nuevo=nuevo+1                             
                             parent = cat       
-                    #name_ppal = categoria.attrib['ref']             
-                    cat.gesioid = categoria.attrib['gesioid']
-                    cat.save() 
-                try:
-                    p = Product.objects.get(ref=ref)
+                    #name_ppal = categoria.attrib['ref'] 
                     if p:
-                        p.category = cat
+                        p.categories.add(cat)
                         p.save()
                     else:
-                        error=error+1
-                except ObjectDoesNotExist as e:
-                    error=error+1
+                        error=error+1         
+                    cat.gesioid = categoria.attrib['gesioid']
+                    cat.save() 
+                if p:
+                    p.category = cat
+                    p.save()
+                else:
+                    error=error+1 
+                
             ''' #ET.dump(cat_jerarquia)
             for catego in prod.find('categories'):
                 cat_jerarquia = catego.find('category')
@@ -805,20 +802,18 @@ def product_reload(request):
 ''' #####   FABRICANTE   ##### '''
 
 def fabricante_home(request):
-    #fabricante_list
-    fichas_list = Fabricante.objects.filter(parent=None)
     #fabricante_grid
     destacadas = {"DIABLA ROJA","BAILE","PIPEDREAMS", "LELO", "BATHMATE",}
-    fichas = Fabricante.objects.filter(name__in=destacadas,parent=None)
     return render(request,"shop/fabricante_home.html",{
         'title': 'Fabricantes y Marcas',
-        'fichas_list':  fichas_list,
-        'fichas': fichas,
+        'title_fab_select': 'Todas las Marcas',
+        'fichas_fab_select':  Fabricante.objects.filter(parent=None),
+        'title_fab_grid': 'Marcas Destacadas',
+        'fichas_fab_grid': Fabricante.objects.filter(name__in=destacadas,parent=None),
     })
 
-def fabricante_detail(request,slug):
-    prod_page=int(Configuracion.objects.get(variable='prod_page').valor)
-    fichas_list = Fabricante.objects.filter(parent=None)
+def fabricante_detail(request,slug):    
+    fichas_fab_select = Fabricante.objects.filter(parent=None)
     fabricantes = Fabricante.objects.all()
     fabricante_slug = slug.split('/')
     fabricante_queryset = list(fabricantes)
@@ -826,50 +821,50 @@ def fabricante_detail(request,slug):
     parent = None
     for slug in fabricante_slug:
         if slug in all_slugs:
-            parent = get_object_or_404(Fabricante,slug=slug,parent=parent)
-    
+            parent = get_object_or_404(Fabricante,slug=slug,parent=parent)    
     breadcrumbs_link = parent.get_fab_list('/')
     fabricante_name = [' '.join(i.split('/')[-1].split('-')) for i in breadcrumbs_link]
     breadcrumbs = zip(breadcrumbs_link, fabricante_name)
-    sub_fabricantes = parent.children.all()
+    
+    fichas_fab_sub = parent.children.all()
 
     #fichas = Imagen.objects.filter(preferred=True, product_id__fabricante_slug__in=breadcrumbs_link).order_by('-product_id__updated')
     #fichas_prod = Product.objects.filter(fabricante__in=sub_fabricantes)
 
     fichas_prod = Imagen.objects.filter(
         Q(preferred=True),
-        Q(product_id__fabricante=parent)|Q(product_id__fabricante__in=sub_fabricantes)).order_by('-product_id__release_date','product_id__fabricante__name')
-    #print('OUT: {0} {1}'.format(parent,fichas_prod))
+        Q(product_id__fabricante=parent)|Q(product_id__fabricante__in=fichas_fab_select)).order_by('-product_id__release_date','product_id__fabricante__name')
+    
+    prod_page= Configuracion.objects.get(variable='prod_page').get_valor_int()
     paginator = Paginator(fichas_prod, prod_page)
     page = request.GET.get('page')
     fichas_prod_paginado = paginator.get_page(page)
     return render(request, "shop/fabricante_detail.html", { 
-        'title': 'Fabricantes y Marcas',
-        'fichas_list': fichas_list, 
+        'title': 'Detalles de la Marca',
+        'title_fab_sub': 'Marcas Asociadas',
+        'fichas_fab_sub': fichas_fab_sub, 
+        'title_fab_select': 'Todas las Marcas',
+        'fichas_fab_select':  fichas_fab_select,
         'hoy': datetime.today(), 
         'breadcrumbs': breadcrumbs,  
         'ficha': parent,
-        'sub_fabricantes': sub_fabricantes, 
         'fichas_prod': fichas_prod_paginado,
     })
 
 ''' #####   CATEGORY   ##### '''
 
 def category_home(request):
-    #category_list
-    fichas_list = Category.objects.filter(parent=None)
-    #category_grid
-    destacadas = {"Varios","Ofertas","Para Hombre", "Para Mujer", "Para Parejas","Lista Negra",}
-    fichas = Category.objects.filter(name__in=destacadas,parent=None)
+    destacadas = {"Varios","Ofertas","Para Hombre", "Para Mujer", "Para Parejas","Lista Negra",} 
     return render(request,"shop/category_home.html",{
         'title': 'Categorías',
-        'fichas_list': fichas_list,
-        'fichas': fichas,
+        'title_cat_list': 'Todas las Categorías',
+        'fichas_cat_list': Category.objects.filter(parent=None),
+        'title_cat_grid': 'Categorías Destacadas',
+        'fichas_cat_grid': Category.objects.filter(name__in=destacadas,parent=None),
     })
 
 def category_detail(request,slug):   
-    #category_list
-    fichas_list = Category.objects.filter(parent=None)
+    
     categorias = Category.objects.all()
     category_slug = slug.split('/')
     category_queryset = list(categorias)
@@ -877,11 +872,9 @@ def category_detail(request,slug):
     parent = None
     for slug in category_slug:
         if slug in all_slugs:
-            #parent = get_object_or_404(Category,slug=slug,parent=parent)
             try:
                 parent = Category.objects.get(slug=slug,parent=parent)
             except Category.DoesNotExist:
-                #raise Http404("Product does not exist")
                 salida.append({
                     'retorno': -1,
                     'salida': "Categoría No Encontrada"
@@ -894,21 +887,27 @@ def category_detail(request,slug):
     
     #fichas = Imagen.objects.filter(preferred=True, product_id__fabricante_slug__in=breadcrumbs_link).order_by('-product_id__updated')
     #fichas_prod = Product.objects.filter(fabricante__in=sub_fabricantes)
+    #Q(product_id__category__in=sub_categorias)|
     fichas_prod = Imagen.objects.filter(
         Q(preferred=True),
-        Q(product_id__category__in=sub_categorias)|Q(product_id__category=parent)).order_by('-product_id__release_date','product_id__category__name')
+        Q(product_id__category=parent)).order_by('-product_id__release_date','product_id__category__name')
+    product_asoc = parent.product_set.all()
+    print(product_asoc)
+    product_ppal=Product.objects.filter(category__slug=slug)
     prod_page=Configuracion.objects.get(variable='prod_page').get_valor_int()
     paginator = Paginator(fichas_prod, prod_page)
     page = request.GET.get('page')
     fichas_prod_paginado = paginator.get_page(page)
     return render(request, "shop/category_detail.html", {  
-        'title': 'Categorías',
-        'fichas_list': fichas_list,
-        'hoy': datetime.today(), 
-        'breadcrumbs': breadcrumbs,  
-        'ficha': parent,
-        'sub_categorias': sub_categorias, 
+        'home_cat_breadcrumb': 'Categorías',
+        'cat_name': '/'+parent.name,
+        'cat_breadcrumbs': breadcrumbs,
+        'title_cat_grid': 'Subcategorías',
+        'fichas_cat_grid': sub_categorias,   
+        'title_cat_list': 'Todas las Categorías',
+        'fichas_cat_list': Category.objects.filter(parent=None),  
         'fichas_prod': fichas_prod_paginado,
+        'hoy': datetime.today(),  
     })
 
 ''' #####   USERPROFILE   ##### '''
@@ -974,11 +973,64 @@ def register(request):
         profile_form = UserProfileForm()
         
     # Render the template depending on the context.
-    return render(request, 'accounts/register.html',{
+    return render(request, 'cuentas/register.html',{
+        'title': 'Información de Registro',
         'user_form': user_form,
         'profile_form': profile_form,
         'registered': registered,
     })
+
+def user_login(request):
+    # If the request is a HTTP POST, try to pull out the relevant information.
+    if request.method == 'POST':
+        # Gather the username and password provided by the user.
+        # This information is obtained from the login form.
+        # We use request.POST.get('<variable>') as opposed
+        # to request.POST['<variable>'], because the
+        # request.POST.get('<variable>') returns None if the
+        # value does not exist, while request.POST['<variable>']
+        # will raise a KeyError exception.
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Use Django's machinery to attempt to see if the username/password
+        # combination is valid - a User object is returned if it is.
+        user = authenticate(username=username, password=password)
+
+        # If we have a User object, the details are correct.
+        # If None (Python's way of representing the absence of a value), no user
+        # with matching credentials was found.
+        if user:
+            # Is the account active? It could have been disabled.
+            if user.is_active:
+                # If the account is valid and active, we can log the user in.
+                # We'll send the user back to the homepage.
+                login(request, user)
+                return HttpResponseRedirect(reverse('index'))
+            else:
+                # An inactive account was used - no logging in!
+                return HttpResponse("Tu cuenta esta deshabilitada.")
+        else:
+            # Bad login details were provided. So we can't log the user in.
+            print("Invalid login details: {0}, {1}".format(username, password))
+            return HttpResponse("Invalid login details supplied.")
+
+    # The request is not a HTTP POST, so display the login form.
+    # This scenario would most likely be a HTTP GET.
+    else:
+        # No context variables to pass to the template system, hence the
+        # blank dictionary object...
+        return render(request, 'cuentas/login.html', {
+            'title': 'Acceso a Diabla Roja Shop',
+        })
+
+# Use the login_required() decorator to ensure only those logged in can access he view.
+@login_required
+def user_logout(request):
+    # Since we know the user is logged in, we can now just log them out.
+    logout(request)
+    # Take the user back to the homepage.
+    return HttpResponseRedirect(reverse('index'))
 
 ''' #####   COOKIES   ##### '''
 

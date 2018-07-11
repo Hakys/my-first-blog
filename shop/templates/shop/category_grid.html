@@ -1,7 +1,8 @@
 {% load static %}
 <div class="center_column col-xs-12" >
+    <h5 class="my-2 w-100">{{ title_cat_grid }}</h5>
     <div class="row">
-        {% for ficha in fichas %}
+        {% for ficha in fichas_cat_grid %}
             <div class="col-lg-2 mb-2 p-1">
                 <div class="card">
                     <a href="{% url 'category_detail' slug=ficha.slug %}">
@@ -23,7 +24,7 @@
                 </div>
             </div>
         {% empty %}
-            <h4>· No hay {{title}} ·</h4>
+            <h4>· No hay {{title_cat_grid}} ·</h4>
         {% endfor %}
     </div>
 </div>

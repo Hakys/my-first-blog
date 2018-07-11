@@ -5,6 +5,7 @@ from . import views
 from django.urls import path
 from django.views.generic.base import RedirectView
 from registration.backends.simple.views import RegistrationView
+from registration.backends.default.views import RegistrationView
 
 #if successful at logging
 class MyRegistrationView(RegistrationView):
@@ -53,6 +54,8 @@ urlpatterns = [
     url(r'^restricted/', views.user_restricted, name='restricted'),
     url(r'^myprofile/', views.user_myprofile, name='myprofile'),
     url(r'^register/$', views.register, name='register'), 
+    url(r'^login/$', views.user_login, name='login'),
+    url(r'^logout/$', views.user_logout, name='logout'),
 
     path('django-project/', RedirectView.as_view(url='https://djangoproject.com'), name='django-project'),
     path('phpmyadmin/', RedirectView.as_view(url='http://localhost/phpmyadmin/db_structure.php?server=1&db=djangogirls&token=24b7ee8a1e9f702aa5a70f85fcc44d70'), name='phpmyadmin'),

@@ -64,11 +64,10 @@ class Category(models.Model):
     
     def get_cat_list(self, separador):
         k = self.parent
-        breadcrumb = ["dummy"]
+        breadcrumb = ['']
         while k is not None:
             breadcrumb.append(k.slug)
             k = k.parent
-
         for i in range(len(breadcrumb)-1):
             breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
         return breadcrumb[-1:0:-1]
@@ -112,9 +111,9 @@ class Fabricante(models.Model):
             breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
         return breadcrumb[-1:0:-1]
 
+
 class Product(models.Model): 
     slug = models.SlugField(max_length=150, unique=True, null=False)
-    portada = models.ForeignKey(Imagen_gen, on_delete=models.CASCADE,  null=True)
     ref = models.CharField(max_length=50, null=False, unique=True)
     title = models.CharField(max_length=150,  blank=False) 
     description = models.TextField(null=True, blank=True)
@@ -247,7 +246,6 @@ class Imagen(models.Model):
             return False
 
 fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
-
 class Externo(models.Model): 
     name = models.CharField(max_length=200, unique=True)
     url = models.URLField()

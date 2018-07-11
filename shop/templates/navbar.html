@@ -32,16 +32,18 @@
                     <a class="dropdown-item" href="#">Mis Pedidos</a>
                     <a class="dropdown-item" href="{% url 'auth_password_change' %}">Change Password</a>
                     <a class="dropdown-item" href="{% url 'auth_password_reset' %}">Reset Password</a>
+                    <a class="dropdown-item"> Nº Visitas: {{ visits }}</a>   
                     <a class="dropdown-item" href="{% url 'auth_logout' %}?next=/">Cerrar Sesión</a>
-                    <p class="dropdown-item"> Nº Visitas: {{ visits }}</p>  
                 </div>
             </li>
         {% else %}
             <li class="nav-item">
                 <a id="btnGroupDrop3" class="nav-link dropdown-toggle" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Zona Privada</a>
                 <div class="dropdown-menu" aria-labelledby="btnGroupDrop3">
-                    <a class="dropdown-item" href="{% url 'auth_login' %}">Acceder</a> 
-                    <a class="dropdown-item" href="{% url 'registration_register' %}">Registrarse</a>
+                    <a class="dropdown-item" href="{% url 'login' %}">Cuentas Acceder</a> 
+                    <a class="dropdown-item" href="{% url 'register' %}">Cuentas Registrarse</a>
+                    <a class="dropdown-item" href="{% url 'auth_login' %}">Registration Acceder</a> 
+                    <a class="dropdown-item" href="{% url 'registration_register' %}">Registration Registrarse</a>
                 </div>
             </li>
         {% endif %}
