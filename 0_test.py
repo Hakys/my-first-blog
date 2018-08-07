@@ -1,10 +1,13 @@
-#!"J:\salvar\ServidorWamp\python\Python37\python.exe"
+#!"C:\salvar\xampp\python\python.exe"
 
 import mysql.connector
 
-cnx = mysql.connector.connect(user='root', password='',
-                              host='127.0.0.1',
-                              database='djangogirls')
+cnx = mysql.connector.connect(
+    user='operadorweb', 
+    password='48933206Gloria',                          
+    host='diablaroja.es',
+    database='wordpress_60'
+    )
 cnx.close()
 
 print("Content-type: text/html\n")

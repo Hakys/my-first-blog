@@ -84,7 +84,7 @@ DATABASES = {
 }
 '''
 DATABASES = {
-    'default': {
+     'default': {
         #'ENGINE': 'django.db.backends.mysql',
         'ENGINE': 'mysql.connector.django',
         'NAME': 'djangogirls',
@@ -92,6 +92,15 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': '/', # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '', # Set to empty string for default.
+    },
+    'wordpress_60': {
+        #'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'mysql.connector.django',
+        'NAME': 'wordpress_60',
+        'USER': 'operadorweb',
+        'PASSWORD': '48933206Gloria',
+        'HOST': 'diablaroja.es', 
+        'PORT': '3306', 
     }
 }
 

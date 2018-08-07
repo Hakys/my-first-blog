@@ -14,10 +14,12 @@ from urllib.request import Request, urlopen
 
 fs_img = FileSystemStorage(location=settings.MEDIA_ROOT)
 
-class Imagen_gen(models.Model):
-    title = models.CharField(max_length=200, null=True)
+class Imagen(models.Model):
+    title = models.CharField(max_length=200, null=True)    
+    name = models.CharField(max_length=200, null=True)
+    ref = models.CharField(max_length=20, null=True)
+    src = models.URLField(unique=True,null=False)
     img = models.ImageField(storage=fs_img, null=True)
-    url = models.URLField(unique=True, null=True, blank=True)
     preferred = models.BooleanField('Portada', default=False)
     
     def get_url():
@@ -32,18 +34,28 @@ class Imagen_gen(models.Model):
         else: 
             preferred='No'
         return self.title+' ('+preferred+')'
+        
+    def exist(image_url):
+        if urlopen(image_url):
+            return True
+        else:
+            return False
 
 #<categories>
 #   <category gesioid="26" ref="Penes Realisticos"><![CDATA[Juguetes XXX|Penes|Penes realisticos]]></category>
 #   <category gesioid="129" ref="Especial Gays"><![CDATA[Juguetes XXX|Especial Gays]]></category>
 #   <category gesioid="7" ref="Anal"><![CDATA[Juguetes XXX|Anal]]></category>
 #</categories>    
+#<brand><![CDATA[REALROCK 100% FLESH]]></brand>
+#<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
+
 class Category(models.Model):
     name = models.CharField(max_length = 150, blank=False)
-    slug = models.SlugField(max_length = 150, blank=False)
+    slug = models.SlugField(blank=False)
     activo = models.BooleanField(default = True)
     gesioid = models.IntegerField(unique = True, null = True) 
     parent = models.ForeignKey('self', on_delete = models.SET_NULL, null = True, related_name = 'children')
+    image = models.ForeignKey(Imagen, on_delete = models.CASCADE, null = True)
      
     def __str__(self):  
         if self.activo: 
@@ -58,7 +70,8 @@ class Category(models.Model):
         return ' >> '.join(full_path[::-1])   
 
     class Meta:
-        ordering = ('name',)
+        ordering = ('parent', 'name',)
+        verbose_name = 'Categoría'
         verbose_name_plural = 'Categorias'  
         unique_together = ('slug', 'parent',)
     
@@ -71,46 +84,6 @@ class Category(models.Model):
         for i in range(len(breadcrumb)-1):
             breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
         return breadcrumb[-1:0:-1]
-
-#image = models.ForeignKey(Imagen_gen,on_delete=models.CASCADE, blank=True, null=True)
-
-#<brand><![CDATA[REALROCK 100% FLESH]]></brand>
-#<brand_hierarchy><![CDATA[REAL ROCK|REALROCK 100% FLESH]]></brand_hierarchy>
-class Fabricante(models.Model):
-    name = models.CharField(max_length = 150, blank=False) 
-    slug = models.SlugField(max_length = 150, blank=False)
-    activo = models.BooleanField(default = True)
-    parent = models.ForeignKey('self', on_delete = models.CASCADE, null = True, related_name = 'children')
-    image = models.ForeignKey(Imagen_gen, on_delete = models.CASCADE, blank = True, null = True)
-
-    def __str__(self):  
-        if self.activo: 
-            activo='Si' 
-        else: 
-            activo='No'         
-        full_path = [self.name+' ('+activo+')']                  
-        k = self.parent                          
-        while k is not None:
-            full_path.append(k.name)
-            k = k.parent
-        return ' >> '.join(full_path[::-1])    
-    
-    class Meta:
-        unique_together = ('slug', 'parent',)
-        ordering = ('name',)
-        verbose_name = "Fabricante"
-        verbose_name_plural = "Fabricantes y Marcas"
-
-    def get_fab_list(self, separador):
-        k = self.parent
-        breadcrumb = ['']
-        while k is not None:
-            breadcrumb.append(k.slug)
-            k = k.parent
-        for i in range(len(breadcrumb)-1):
-            breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
-        return breadcrumb[-1:0:-1]
-
 
 class Product(models.Model): 
     slug = models.SlugField(max_length=150, unique=True, null=False)
@@ -138,33 +111,25 @@ class Product(models.Model):
     unit_of_measurement = models.CharField(max_length=20, blank=True)
     pvp = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
-    fabricante = models.ForeignKey(Fabricante, on_delete=models.SET_NULL, null=True, related_name='fabricante')
-
     #<stock><location path="General">50</location></stock>
     stock = models.IntegerField(default=0)
 
-    category = models.ForeignKey(Category, null=True, on_delete=models.SET_NULL, related_name='category_ppal')
+    fabricante = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='fabricante')
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='category_ppal')
     categories = models.ManyToManyField(Category)
+    imagens = models.ManyToManyField(Imagen)
 
     #prepaid_reservation = models.BooleanField('Pre-Pedido',default=False)
     #shipping_weight_grame = models.IntegerField(default=0)
-    #brand = models.CharField(max_length=200,blank=True)
     #<min_units_per_order>1</min_units_per_order>
 	#<max_units_per_order>999</max_units_per_order>
 	#<min_amount_per_order>1</min_amount_per_order>
 	#<max_amount_per_order>99999999</max_amount_per_order>    
-    #brand_hierarchy = models.TextField()
 	#	<refrigerated value="0" />
 	#	<barcodes>
 	#		<barcode type="EAN-13"><![CDATA[697309010016]]></barcode>
 	#	</barcodes>
-    #	<categories>
-	#		<category gesioid="87" ref="Aceites Esenciales"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Aceites esenciales]]></category>
-	#		<category gesioid="94" ref="Efecto Afrodisiaco"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Efecto afrodisiaco]]></category>
-	#		<category gesioid="91" ref="Clima Erotico"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|Clima erótico]]></category>
-	#		<category gesioid="88" ref="100% comestibles"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje|100% comestibles]]></category>
-	#		<category gesioid="77" ref="Aceites y Cremas de masaje"><![CDATA[Aceites y Lubricantes|Aceites y Cremas de masaje]]></category>
-	#	</categories>
+    
 	#	<internationalization>
 	#		<title><value lang="en-UK"><![CDATA[SHUNGA EROTIC MASSAGE OIL DESIRE]]></value></title>
 	#		<description><value lang="en-UK"><![CDATA[SHUNGA EROTIC MASSAGE OIL DESIRE]]></value></description>
@@ -201,9 +166,20 @@ class Product(models.Model):
 
         for i in range(len(breadcrumb)-1):
             breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
+        return breadcrumb[-1:0:-1]  
+
+    def get_cat_list(self, separador):
+        k = self.category
+        breadcrumb = ["dummy"]
+        while k is not None:
+            breadcrumb.append(k.slug)
+            k = k.parent
+
+        for i in range(len(breadcrumb)-1):
+            breadcrumb[i] = separador.join(breadcrumb[-1:i-1:-1])
         return breadcrumb[-1:0:-1]    
 
-    def get_pvp(self):
+    def calcular_pvp(self):
         beneficio = Configuracion.objects.get(variable='beneficio').get_valor_dec()
         rec_equivalencia = Configuracion.objects.get(variable='rec_equivalencia').get_valor_dec()
         if not self.vat:
@@ -218,44 +194,17 @@ class Product(models.Model):
         self.pvp = round(coste_total/(1-porc_benef),2)
         if self.recommended_retail_price > self.pvp:
             self.pvp = self.recommended_retail_price
-        #self.save()
+        self.save()
         return self.pvp
 
-#fs_media = FileSystemStorage(location=STATIC_ROOT+'/img')  
-class Imagen(models.Model):
-    title = models.CharField(max_length=200, blank=True, null=True)
-    name = models.CharField(max_length=200, blank=True, null=True)
-    ref = models.CharField(max_length=20, blank=True)
-    product_id = models.ForeignKey(Product, on_delete=models.CASCADE, null=False, related_name='album')
-    #img = models.ImageField(storage=fs)
-    src = models.URLField(unique=True)
-    url = models.URLField(blank=True)
-    preferred = models.BooleanField('Portada', default=False)
-    
-    def __str__(self):
-        if self.preferred: 
-            preferred='Sí' 
-        else: 
-            preferred='No'
-        return self.ref+' '+self.title+' ('+preferred+')'    
-    
-    def exist(image_url):
-        if urlopen(image_url):
-            return True
-        else:
-            return False
-
 fs = FileSystemStorage(location=settings.STATIC_ROOT+'/store')
+
 class Externo(models.Model): 
     name = models.CharField(max_length=200, unique=True)
     url = models.URLField()
     file = models.FileField(storage=fs, null=True, blank=True)
     created_date = models.DateTimeField('Fecha de Creación', default=timezone.now)  
     updated_date = models.DateTimeField('Última Actualización', default=datetime.min)
-    n_productos = models.IntegerField(default=0)
-    n_fabricantes = models.IntegerField(default=0)
-    n_imagenes = models.IntegerField(default=0)
-    n_categorias = models.IntegerField(default=0)
 
     def importar(self):
         try:
